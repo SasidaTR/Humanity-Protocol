@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title data-i18n="app.title"></title>
+    <link rel="stylesheet" href="src/renderer/styles/main.css" />
+  </head>
+  <body>
+    <main>
+      <section id="menu-screen">
+        <h1 id="game-title" data-i18n="app.title"></h1>
+        <nav aria-label="Menu principal">
+          <button type="button" id="resume-button" data-i18n="menu.resume" hidden></button>
+          <button type="button" id="continue-button" data-i18n="menu.continue" hidden></button>
+          <button type="button" id="new-game-button" data-i18n="menu.newGame"></button>
+          <button type="button" id="load-game-button" data-i18n="menu.loadGame" hidden></button>
+          <button type="button" id="settings-button" data-i18n="menu.settings"></button>
+          <button type="button" id="quit-button" data-i18n="menu.quit"></button>
+        </nav>
+      </section>
+      <section id="settings-screen" hidden>
+        <h1 data-i18n="settings.title"></h1>
+        <label>
+          <input type="checkbox" id="fullscreen-checkbox" />
+          <span data-i18n="settings.fullscreen"></span>
+        </label>
+        <div>
+          <label for="language-select" data-i18n="settings.language"></label>
+          <select id="language-select">
+            <option value="fr" data-i18n="settings.languageFr"></option>
+            <option value="en" data-i18n="settings.languageEn"></option>
+          </select>
+        </div>
+        <div>
+          <button type="button" id="back-button" data-i18n="settings.back"></button>
+        </div>
+      </section>
+      <section id="intro-screen" hidden>
+        <div id="intro-text"></div>
+      </section>
+      <section id="title-screen" hidden>
+        <div class="title-card">
+          <h1 data-i18n="chapter.title"></h1>
+        </div>
+      </section>
+      <section id="load-screen" hidden>
+        <h1 data-i18n="load.title"></h1>
+        <div id="save-list"></div>
+        <button type="button" id="load-back-button" data-i18n="load.back"></button>
+      </section>
+    </main>
+    <script src="src/renderer/scripts/i18n.js"></script>
+    <script src="src/renderer/scripts/menu.js"></script>
+  </body>
+</html>

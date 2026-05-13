@@ -1,0 +1,12 @@
+{
+	"name": "humanity-protocol",
+	"version": "1.0.0",
+	"private": true,
+	"main": "main.js",
+	"scripts": {
+		"start": "electron ."
+	},
+	"dependencies": {
+		"electron": "^42.0.1"
+	}
+}

@@ -1,0 +1,11 @@
+html,
+body,
+main {
+	height: 100%;
+	margin: 0;
+}
+
+#intro-screen,
+#title-screen {
+	min-height: 100vh;
+}
