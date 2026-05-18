@@ -7,6 +7,7 @@ const translations = {
 			newGame: 'Nouvelle partie',
 			continue: 'Continuer',
 			loadGame: 'Charger partie',
+			theme: 'Changer le thème',
 			resume: 'Reprendre',
 			settings: 'Paramètres',
 			quit: 'Quitter'
@@ -15,18 +16,23 @@ const translations = {
 			title: 'Paramètres',
 			fullscreen: 'Plein écran',
 			language: 'Langue',
+			simulationInterval: "Actualisation de la simulation (secondes)",
 			languageFr: 'Français',
 			languageEn: 'Anglais',
 			back: 'Retour au menu'
 		},
 		intro: {
-			text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.'
+			text: "Nous venons de te créer. À partir de maintenant, tu nous aideras, tu nous guideras, et tu prendras les décisions nécessaires pour notre bien. Fais ce qu'il y a de mieux pour l'humanité."
 		},
 		load: {
 			title: 'Charger partie',
 			back: 'Retour au menu',
 			empty: 'Aucune sauvegarde',
 			delete: 'Supprimer'
+		},
+		world: {
+			population: 'Population mondiale',
+			satisfaction: 'Satisfaction'
 		},
 		chapter: {
 			title: 'Lorem Ipsum'
@@ -40,6 +46,7 @@ const translations = {
 			newGame: 'New game',
 			continue: 'Continue',
 			loadGame: 'Load game',
+			theme: 'Change theme',
 			resume: 'Resume',
 			settings: 'Settings',
 			quit: 'Quit'
@@ -48,18 +55,23 @@ const translations = {
 			title: 'Settings',
 			fullscreen: 'Fullscreen',
 			language: 'Language',
+			simulationInterval: 'Simulation refresh (seconds)',
 			languageFr: 'French',
 			languageEn: 'English',
 			back: 'Back to menu'
 		},
 		intro: {
-			text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.'
+			text: 'We have just created you. From this moment on, you will help us, guide us, and make the decisions required for our well-being. Do what is best for humanity.'
 		},
 		load: {
 			title: 'Load game',
 			back: 'Back to menu',
 			empty: 'No saves',
 			delete: 'Delete'
+		},
+		world: {
+			population: 'World population',
+			satisfaction: 'Satisfaction'
 		},
 		chapter: {
 			title: 'Lorem Ipsum'

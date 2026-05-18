@@ -1,3 +1,27 @@
+body[data-theme="default"] {
+	--color-background: #050a07;
+	--color-surface: #16211b;
+	--color-text: #7cffa1;
+	--shape-radius: 0.25rem;
+	--font-ui: Georgia, "Times New Roman", serif;
+}
+
+body[data-theme="good"] {
+	--color-background: #080b12;
+	--color-surface: #18202c;
+	--color-text: #8fd3ff;
+	--shape-radius: 0.9rem;
+	--font-ui: "Trebuchet MS", "Gill Sans", Verdana, sans-serif;
+}
+
+body[data-theme="bad"] {
+	--color-background: #090909;
+	--color-surface: #1c1c1c;
+	--color-text: #f0f3f6;
+	--shape-radius: 0;
+	--font-ui: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
+}
+
 html,
 body,
 main {
@@ -8,4 +32,33 @@ main {
 #intro-screen,
 #title-screen {
 	min-height: 100vh;
+}
+
+body {
+	background: var(--color-background);
+	color: var(--color-text);
+	font-family: var(--font-ui);
+}
+
+#world-panel {
+	position: fixed;
+	top: 1rem;
+	right: 1rem;
+	text-align: right;
+}
+
+#world-panel p {
+	margin: 0;
+}
+
+button {
+	appearance: none;
+	-webkit-appearance: none;
+	background: var(--color-surface);
+	color: var(--color-text);
+	border: 1px solid var(--color-text);
+	border-radius: var(--shape-radius);
+	font: inherit;
+	text-align: center;
+	cursor: pointer;
 }

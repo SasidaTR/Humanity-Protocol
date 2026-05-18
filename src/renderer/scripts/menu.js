@@ -6,24 +6,18 @@ const loadScreen = document.querySelector('#load-screen')
 const newGameButton = document.querySelector('#new-game-button')
 const continueButton = document.querySelector('#continue-button')
 const loadGameButton = document.querySelector('#load-game-button')
+const themeButton = document.querySelector('#theme-button')
 const resumeButton = document.querySelector('#resume-button')
 const settingsButton = document.querySelector('#settings-button')
 const backButton = document.querySelector('#back-button')
 const loadBackButton = document.querySelector('#load-back-button')
 const fullscreenCheckbox = document.querySelector('#fullscreen-checkbox')
 const languageSelect = document.querySelector('#language-select')
+const simulationIntervalSelect = document.querySelector('#simulation-interval-select')
 const quitButton = document.querySelector('#quit-button')
-const introText = document.querySelector('#intro-text')
 const saveList = document.querySelector('#save-list')
 
 const restorableScreens = new Set(['intro', 'title'])
-
-const typewriterState = {
-	timerId: null,
-	fullText: '',
-	index: 0,
-	isComplete: false
-}
 
 const gameState = {
 	currentScreen: 'menu',
@@ -34,9 +28,23 @@ const gameState = {
 	currentSaveId: null
 }
 
+function syncSimulationWithScreen(screenName){
+	if (!gameState.hasActiveRun) {
+		window.humanityProtocolPopulation.stopSimulation()
+		return
+	}
+
+	if (screenName === 'intro' || screenName === 'title') {
+		window.humanityProtocolPopulation.startSimulation()
+		return
+	}
+
+	window.humanityProtocolPopulation.stopSimulation()
+}
+
 function showScreen(screenName){
 	if (screenName !== 'intro') {
-		stopTypewriter()
+		window.humanityProtocolIntro.stopTypewriter()
 	}
 
 	menuScreen.hidden = screenName !== 'menu'
@@ -45,6 +53,7 @@ function showScreen(screenName){
 	titleScreen.hidden = screenName !== 'title'
 	loadScreen.hidden = screenName !== 'load'
 	gameState.currentScreen = screenName
+	syncSimulationWithScreen(screenName)
 
 	if (screenName !== 'menu' && screenName !== 'settings' && screenName !== 'load') {
 		gameState.lastNonMenuScreen = screenName
@@ -57,9 +66,66 @@ function updateMenuButtons(){
 	loadGameButton.hidden = !gameState.hasSaves
 }
 
+function setHasSaves(hasSaves){
+	gameState.hasSaves = hasSaves
+}
+
+function clearCurrentRun(){
+	gameState.currentSaveId = null
+	gameState.hasActiveRun = false
+	gameState.lastNonMenuScreen = null
+	window.humanityProtocolPopulation.stopSimulation()
+}
+
+function buildSaveSnapshot(){
+	return {
+		id: gameState.currentSaveId,
+		screen: gameState.lastNonMenuScreen,
+		label: `Save ${new Date().toISOString()}`,
+		intro: window.humanityProtocolIntro.buildIntroSnapshot(),
+		population: window.humanityProtocolPopulation.buildPopulationSnapshot(),
+		ui: window.humanityProtocolTheme.buildThemeSnapshot()
+	}
+}
+
+async function refreshSaveAvailability(){
+	return window.humanityProtocolSaves.refreshSaveAvailability({
+		setHasSaves,
+		updateMenuButtons
+	})
+}
+
+async function saveCurrentRun(){
+	if (!gameState.hasActiveRun || !gameState.lastNonMenuScreen || !gameState.currentSaveId) {
+		return null
+	}
+
+	const save = await window.humanityProtocol.updateSave(buildSaveSnapshot())
+	await refreshSaveAvailability()
+	return save
+}
+
 function openMainMenu(){
 	updateMenuButtons()
 	showScreen('menu')
+}
+
+function cycleTheme(){
+	const themes = window.humanityProtocolTheme.themes
+	const currentTheme = window.humanityProtocolTheme.getCurrentTheme()
+	const currentIndex = themes.indexOf(currentTheme)
+	const nextTheme = themes[(currentIndex + 1) % themes.length]
+	window.humanityProtocolTheme.applyTheme(nextTheme)
+}
+
+function setWorldStatusAvailability(isEnabled, language = languageSelect.value || 'fr'){
+	if (isEnabled) {
+		window.humanityProtocolTools.enableTool('world-status')
+		window.humanityProtocolTools.renderTools({ language })
+		return
+	}
+
+	window.humanityProtocolTools.disableTool('world-status')
 }
 
 async function openPauseMenu(){
@@ -75,97 +141,22 @@ async function openPauseMenu(){
 async function loadSettings(){
 	const settings = await window.humanityProtocol.loadSettings()
 	window.humanityProtocolI18n.applyTranslations(settings.language)
+	window.humanityProtocolPopulation.setSimulationInterval(settings.simulationIntervalSeconds)
+	window.humanityProtocolTools.renderTools({ language: settings.language })
 	fullscreenCheckbox.checked = settings.startFullscreen
 	languageSelect.value = settings.language
+	simulationIntervalSelect.value = String(settings.simulationIntervalSeconds)
 	return settings
-}
-
-function stopTypewriter(){
-	if (typewriterState.timerId) {
-		clearTimeout(typewriterState.timerId)
-		typewriterState.timerId = null
-	}
-}
-
-function finishIntroText(){
-	stopTypewriter()
-	introText.textContent = typewriterState.fullText
-	typewriterState.index = typewriterState.fullText.length
-	typewriterState.isComplete = true
-}
-
-function typeNextCharacter(){
-	if (typewriterState.index >= typewriterState.fullText.length) {
-		typewriterState.isComplete = true
-		typewriterState.timerId = null
-		return
-	}
-
-	typewriterState.index += 1
-	introText.textContent = typewriterState.fullText.slice(0, typewriterState.index)
-	typewriterState.timerId = setTimeout(typeNextCharacter, 18)
-}
-
-function resumeIntroIfNeeded(){
-	if (typewriterState.isComplete) {
-		return
-	}
-
-	stopTypewriter()
-	typewriterState.timerId = setTimeout(typeNextCharacter, 18)
-}
-
-function buildSaveSnapshot(){
-	return {
-		id: gameState.currentSaveId,
-		screen: gameState.lastNonMenuScreen,
-		label: `Save ${new Date().toISOString()}`,
-		intro: {
-			index: typewriterState.index,
-			isComplete: typewriterState.isComplete
-		}
-	}
-}
-
-async function refreshSaveAvailability(){
-	const saves = await window.humanityProtocol.listSaves()
-	gameState.hasSaves = saves.length > 0
-	updateMenuButtons()
-	return saves
-}
-
-async function saveCurrentRun(){
-	if (!gameState.hasActiveRun || !gameState.lastNonMenuScreen || !gameState.currentSaveId) {
-		return null
-	}
-
-	const save = await window.humanityProtocol.updateSave(buildSaveSnapshot())
-	await refreshSaveAvailability()
-	return save
 }
 
 async function startIntro(){
 	const settings = await loadSettings()
-	typewriterState.fullText = window.humanityProtocolI18n.getTranslation(settings.language, 'intro.text')
-	typewriterState.index = 0
-	typewriterState.isComplete = false
-	introText.textContent = ''
 	gameState.currentSaveId = `save-${Date.now()}`
 	gameState.hasActiveRun = true
+	window.humanityProtocolPopulation.resetPopulation()
+	setWorldStatusAvailability(false, settings.language)
+	window.humanityProtocolIntro.startIntro(settings.language)
 	showScreen('intro')
-	stopTypewriter()
-	typeNextCharacter()
-}
-
-function restoreIntroFromSave(settings, save){
-	typewriterState.fullText = window.humanityProtocolI18n.getTranslation(settings.language, 'intro.text')
-	typewriterState.index = save?.intro?.index || 0
-	typewriterState.isComplete = Boolean(save?.intro?.isComplete)
-	introText.textContent = typewriterState.fullText.slice(0, typewriterState.index)
-
-	if (typewriterState.isComplete) {
-		introText.textContent = typewriterState.fullText
-	}
 }
 
 async function loadSave(save){
@@ -175,89 +166,51 @@ async function loadSave(save){
 		return
 	}
 
+	window.humanityProtocolTheme.applyThemeFromSave(save)
+	window.humanityProtocolPopulation.restorePopulation(save)
+	setWorldStatusAvailability(save.screen !== 'intro', settings.language)
+	gameState.currentSaveId = save.id
+	gameState.hasActiveRun = true
+	gameState.hasSaves = true
+	updateMenuButtons()
+
 	if (save.screen === 'intro') {
-		gameState.currentSaveId = save.id
-		gameState.hasActiveRun = true
-		gameState.hasSaves = true
-		updateMenuButtons()
-		restoreIntroFromSave(settings, save)
+		window.humanityProtocolIntro.restoreIntro(settings.language, save)
 		showScreen('intro')
-		resumeIntroIfNeeded()
+		window.humanityProtocolIntro.resumeIntroIfNeeded()
 		return
 	}
 
 	if (save.screen === 'title') {
-		gameState.currentSaveId = save.id
-		gameState.hasActiveRun = true
-		gameState.hasSaves = true
-		updateMenuButtons()
 		showScreen('title')
 	}
 }
 
 async function continueSavedRun(){
-	const save = await window.humanityProtocol.loadLatestSave()
-
-	if (!save) {
-		return
-	}
-
-	await loadSave(save)
-}
-
-async function deleteSaveEntry(saveId){
-	if (!saveId) {
-		return
-	}
-
-	if (gameState.currentSaveId === saveId) {
-		gameState.currentSaveId = null
-		gameState.hasActiveRun = false
-		gameState.lastNonMenuScreen = null
-	}
-
-	await window.humanityProtocol.deleteSave(saveId)
-	await refreshSaveAvailability()
-
-	if (!loadScreen.hidden) {
-		await renderSaveList()
-	}
+	return window.humanityProtocolSaves.continueSavedRun({ loadSave })
 }
 
 async function renderSaveList(){
 	const settings = await loadSettings()
-	const saves = await window.humanityProtocol.listSaves()
-	saveList.replaceChildren()
+	return window.humanityProtocolSaves.renderSaveList({
+		language: settings.language,
+		saveList,
+		loadSave,
+		deleteSave: (saveId) => deleteSaveEntry(saveId)
+	})
+}
 
-	if (saves.length === 0) {
-		const emptyState = document.createElement('p')
-		emptyState.textContent = window.humanityProtocolI18n.getTranslation(settings.language, 'load.empty')
-		saveList.append(emptyState)
-		return
-	}
+async function deleteSaveEntry(saveId){
+	await window.humanityProtocolSaves.deleteSaveEntry({
+		saveId,
+		currentSaveId: gameState.currentSaveId,
+		onDeleteCurrentSave: clearCurrentRun,
+		refreshSaveAvailability,
+		isLoadScreenVisible: () => !loadScreen.hidden,
+		renderSaveList
+	})
 
-	saves
-		.sort((left, right) => right.updatedAt - left.updatedAt)
-		.forEach((save) => {
-			const row = document.createElement('div')
-			const loadButton = document.createElement('button')
-			const deleteButton = document.createElement('button')
-
-			loadButton.type = 'button'
-			loadButton.textContent = `${save.label} - ${new Date(save.updatedAt).toLocaleString(settings.language)}`
-			loadButton.addEventListener('click', () => {
-				loadSave(save)
-			})
-
-			deleteButton.type = 'button'
-			deleteButton.textContent = window.humanityProtocolI18n.getTranslation(settings.language, 'load.delete')
-			deleteButton.addEventListener('click', () => {
-				deleteSaveEntry(save.id)
-			})
-
-			row.append(loadButton, deleteButton)
-			saveList.append(row)
-		})
+	await applyLatestSavedTheme()
 }
 
 async function openLoadScreen(){
@@ -265,8 +218,24 @@ async function openLoadScreen(){
 	showScreen('load')
 }
 
+async function applyLatestSavedTheme(){
+	const latestSave = await window.humanityProtocol.loadLatestSave()
+
+	if (!latestSave) {
+		window.humanityProtocolTheme.applyTheme(window.humanityProtocolTheme.defaultTheme)
+		return
+	}
+
+	window.humanityProtocolTheme.applyThemeFromSave(latestSave)
+}
+
 async function initialize(){
+	window.humanityProtocolTheme.applyTheme(window.humanityProtocolTheme.defaultTheme)
+	window.humanityProtocolPopulation.resetPopulation()
+	window.humanityProtocolPopulation.stopSimulation()
+	setWorldStatusAvailability(false)
 	await loadSettings()
+	await applyLatestSavedTheme()
 	await refreshSaveAvailability()
 	openMainMenu()
 }
@@ -285,6 +254,10 @@ loadGameButton.addEventListener('click', () => {
 	openLoadScreen()
 })
 
+themeButton.addEventListener('click', () => {
+	cycleTheme()
+})
+
 resumeButton.addEventListener('click', () => {
 	if (!gameState.lastNonMenuScreen) {
 		return
@@ -293,7 +266,7 @@ resumeButton.addEventListener('click', () => {
 	showScreen(gameState.lastNonMenuScreen)
 
 	if (gameState.lastNonMenuScreen === 'intro') {
-		resumeIntroIfNeeded()
+		window.humanityProtocolIntro.resumeIntroIfNeeded()
 	}
 })
 
@@ -308,7 +281,7 @@ backButton.addEventListener('click', () => {
 		showScreen(gameState.lastNonMenuScreen)
 
 		if (gameState.lastNonMenuScreen === 'intro') {
-			resumeIntroIfNeeded()
+			window.humanityProtocolIntro.resumeIntroIfNeeded()
 		}
 
 		return
@@ -333,20 +306,24 @@ languageSelect.addEventListener('change', async () => {
 	})
 
 	window.humanityProtocolI18n.applyTranslations(settings.language)
+	window.humanityProtocolTools.renderTools({ language: settings.language })
 
 	if (!introScreen.hidden) {
-		typewriterState.fullText = window.humanityProtocolI18n.getTranslation(settings.language, 'intro.text')
-
-		if (typewriterState.isComplete) {
-			introText.textContent = typewriterState.fullText
-		} else {
-			introText.textContent = typewriterState.fullText.slice(0, typewriterState.index)
-		}
+		window.humanityProtocolIntro.applyLanguage(settings.language)
 	}
 
 	if (!loadScreen.hidden) {
 		renderSaveList()
 	}
+})
+
+simulationIntervalSelect.addEventListener('change', async () => {
+	const settings = await window.humanityProtocol.updateSettings({
+		simulationIntervalSeconds: Number(simulationIntervalSelect.value)
+	})
+
+	window.humanityProtocolPopulation.setSimulationInterval(settings.simulationIntervalSeconds)
+	simulationIntervalSelect.value = String(settings.simulationIntervalSeconds)
 })
 
 quitButton.addEventListener('click', async () => {
@@ -355,11 +332,12 @@ quitButton.addEventListener('click', async () => {
 })
 
 introScreen.addEventListener('click', () => {
-	if (!typewriterState.isComplete) {
-		finishIntroText()
+	if (!window.humanityProtocolIntro.typewriterState.isComplete) {
+		window.humanityProtocolIntro.finishIntroText()
 		return
 	}
 
+	setWorldStatusAvailability(true)
 	showScreen('title')
 	saveCurrentRun()
 })

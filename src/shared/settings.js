@@ -1,6 +1,7 @@
 const defaultSettings = {
 	startFullscreen: true,
-	language: 'fr'
+	language: 'fr',
+	simulationIntervalSeconds: 1.5
 }
 
 function mergeSettings(settings = {}){
