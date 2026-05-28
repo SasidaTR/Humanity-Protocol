@@ -8,71 +8,66 @@
   </head>
   <body data-theme="default">
     <main>
-      <aside id="world-panel" aria-label="État mondial">
-        <p id="world-population"></p>
-        <p id="world-satisfaction"></p>
-      </aside>
-      <section id="menu-screen">
-        <h1 id="game-title" data-i18n="app.title"></h1>
-        <nav aria-label="Menu principal">
-          <button type="button" id="resume-button" data-i18n="menu.resume" hidden></button>
-          <button type="button" id="continue-button" data-i18n="menu.continue" hidden></button>
-          <button type="button" id="new-game-button" data-i18n="menu.newGame"></button>
-          <button type="button" id="load-game-button" data-i18n="menu.loadGame" hidden></button>
-          <button type="button" id="theme-button" data-i18n="menu.theme"></button>
-          <button type="button" id="settings-button" data-i18n="menu.settings"></button>
-          <button type="button" id="quit-button" data-i18n="menu.quit"></button>
-        </nav>
+      <aside id="tools-panel" aria-label="Outils actifs"></aside>
+      <section id="menu-screen" class="screen is-active">
+        <div id="menu-main-view" class="menu-view is-active">
+          <h1 id="game-title" data-i18n="app.title"></h1>
+          <nav aria-label="Menu principal">
+            <button type="button" id="resume-button" data-i18n="menu.resume" hidden></button>
+            <button type="button" id="continue-button" data-i18n="menu.continue" hidden></button>
+            <button type="button" id="new-game-button" data-i18n="menu.newGame"></button>
+            <button type="button" id="load-game-button" data-i18n="menu.loadGame" hidden></button>
+            <button type="button" id="theme-button" data-i18n="menu.theme"></button>
+            <button type="button" id="settings-button" data-i18n="menu.settings"></button>
+            <button type="button" id="quit-button" data-i18n="menu.quit"></button>
+          </nav>
+        </div>
+        <div id="menu-settings-view" class="menu-view">
+          <h1 data-i18n="settings.title"></h1>
+          <label>
+            <input type="checkbox" id="fullscreen-checkbox" />
+            <span data-i18n="settings.fullscreen"></span>
+          </label>
+          <div>
+            <label for="language-select" data-i18n="settings.language"></label>
+            <select id="language-select">
+              <option value="fr" data-i18n="settings.languageFr"></option>
+              <option value="en" data-i18n="settings.languageEn"></option>
+            </select>
+          </div>
+          <div>
+            <label for="simulation-interval-select" data-i18n="settings.simulationInterval"></label>
+            <select id="simulation-interval-select">
+              <option value="1">1 h</option>
+              <option value="2">2 h</option>
+              <option value="3">3 h</option>
+            </select>
+          </div>
+          <div>
+            <button type="button" id="back-button" data-i18n="settings.back"></button>
+          </div>
+        </div>
+        <div id="menu-load-view" class="menu-view">
+          <h1 data-i18n="load.title"></h1>
+          <div id="save-list"></div>
+          <button type="button" id="load-back-button" data-i18n="load.back"></button>
+        </div>
       </section>
-      <section id="settings-screen" hidden>
-        <h1 data-i18n="settings.title"></h1>
-        <label>
-          <input type="checkbox" id="fullscreen-checkbox" />
-          <span data-i18n="settings.fullscreen"></span>
-        </label>
-        <div>
-          <label for="language-select" data-i18n="settings.language"></label>
-          <select id="language-select">
-            <option value="fr" data-i18n="settings.languageFr"></option>
-            <option value="en" data-i18n="settings.languageEn"></option>
-          </select>
-        </div>
-        <div>
-          <label for="simulation-interval-select" data-i18n="settings.simulationInterval"></label>
-          <select id="simulation-interval-select">
-            <option value="0.25">0,25</option>
-            <option value="0.5">0,5</option>
-            <option value="0.75">0,75</option>
-            <option value="1">1</option>
-            <option value="1.25">1,25</option>
-            <option value="1.5">1,5</option>
-            <option value="1.75">1,75</option>
-            <option value="2">2</option>
-          </select>
-        </div>
-        <div>
-          <button type="button" id="back-button" data-i18n="settings.back"></button>
-        </div>
-      </section>
-      <section id="intro-screen" hidden>
+      <section id="intro-screen" class="screen">
         <div id="intro-text"></div>
       </section>
-      <section id="title-screen" hidden>
-        <div class="title-card">
-          <h1 data-i18n="chapter.title"></h1>
-        </div>
-      </section>
-      <section id="load-screen" hidden>
-        <h1 data-i18n="load.title"></h1>
-        <div id="save-list"></div>
-        <button type="button" id="load-back-button" data-i18n="load.back"></button>
+      <section id="game-screen" class="screen">
       </section>
     </main>
     <script src="src/renderer/scripts/i18n.js"></script>
     <script src="src/renderer/scripts/theme.js"></script>
     <script src="src/renderer/scripts/tools.js"></script>
+    <script src="src/renderer/scripts/world-time.js"></script>
     <script src="src/renderer/scripts/population.js"></script>
+    <script src="src/renderer/scripts/satisfaction-survey.js"></script>
+    <script src="src/renderer/scripts/world-funds.js"></script>
     <script src="src/renderer/scripts/world-status-tool.js"></script>
+    <script src="src/renderer/scripts/game-session.js"></script>
     <script src="src/renderer/scripts/intro.js"></script>
     <script src="src/renderer/scripts/saves.js"></script>
     <script src="src/renderer/scripts/menu.js"></script>

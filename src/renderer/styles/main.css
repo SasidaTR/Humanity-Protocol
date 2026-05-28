@@ -1,5 +1,5 @@
 body[data-theme="default"] {
-	--color-background: #050a07;
+	--color-background: #0d1011;
 	--color-surface: #16211b;
 	--color-text: #7cffa1;
 	--shape-radius: 0.25rem;
@@ -29,8 +29,16 @@ main {
 	margin: 0;
 }
 
+.screen {
+	display: none;
+}
+
+.screen.is-active {
+	display: block;
+}
+
 #intro-screen,
-#title-screen {
+#game-screen {
 	min-height: 100vh;
 }
 
@@ -40,14 +48,52 @@ body {
 	font-family: var(--font-ui);
 }
 
-#world-panel {
+#menu-screen.is-active {
+	min-height: 100vh;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 2rem 1rem;
+	box-sizing: border-box;
+	text-align: center;
+}
+
+#menu-screen nav,
+#menu-settings-view,
+#menu-load-view {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 0.75rem;
+}
+
+#menu-main-view,
+#menu-settings-view,
+#menu-load-view {
+	display: none;
+}
+
+#menu-main-view.is-active,
+#menu-settings-view.is-active,
+#menu-load-view.is-active {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}
+
+#menu-screen button {
+	min-width: 14rem;
+}
+
+#tools-panel {
 	position: fixed;
 	top: 1rem;
 	right: 1rem;
 	text-align: right;
 }
 
-#world-panel p {
+#tools-panel p {
 	margin: 0;
 }
 

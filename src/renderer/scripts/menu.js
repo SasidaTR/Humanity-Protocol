@@ -1,8 +1,9 @@
 const menuScreen = document.querySelector('#menu-screen')
-const settingsScreen = document.querySelector('#settings-screen')
+const menuMainView = document.querySelector('#menu-main-view')
+const menuSettingsView = document.querySelector('#menu-settings-view')
+const menuLoadView = document.querySelector('#menu-load-view')
 const introScreen = document.querySelector('#intro-screen')
-const titleScreen = document.querySelector('#title-screen')
-const loadScreen = document.querySelector('#load-screen')
+const gameScreen = document.querySelector('#game-screen')
 const newGameButton = document.querySelector('#new-game-button')
 const continueButton = document.querySelector('#continue-button')
 const loadGameButton = document.querySelector('#load-game-button')
@@ -16,30 +17,18 @@ const languageSelect = document.querySelector('#language-select')
 const simulationIntervalSelect = document.querySelector('#simulation-interval-select')
 const quitButton = document.querySelector('#quit-button')
 const saveList = document.querySelector('#save-list')
+const screens = {
+	menu: menuScreen,
+	intro: introScreen,
+	game: gameScreen
+}
 
-const restorableScreens = new Set(['intro', 'title'])
+const restorableScreens = new Set(['intro', 'game'])
 
 const gameState = {
 	currentScreen: 'menu',
-	lastNonMenuScreen: null,
-	hasActiveRun: false,
 	hasSaves: false,
-	settingsReturnMode: 'main',
-	currentSaveId: null
-}
-
-function syncSimulationWithScreen(screenName){
-	if (!gameState.hasActiveRun) {
-		window.humanityProtocolPopulation.stopSimulation()
-		return
-	}
-
-	if (screenName === 'intro' || screenName === 'title') {
-		window.humanityProtocolPopulation.startSimulation()
-		return
-	}
-
-	window.humanityProtocolPopulation.stopSimulation()
+	menuView: 'main'
 }
 
 function showScreen(screenName){
@@ -47,45 +36,44 @@ function showScreen(screenName){
 		window.humanityProtocolIntro.stopTypewriter()
 	}
 
-	menuScreen.hidden = screenName !== 'menu'
-	settingsScreen.hidden = screenName !== 'settings'
-	introScreen.hidden = screenName !== 'intro'
-	titleScreen.hidden = screenName !== 'title'
-	loadScreen.hidden = screenName !== 'load'
-	gameState.currentScreen = screenName
-	syncSimulationWithScreen(screenName)
+	Object.entries(screens).forEach(([name, screen]) => {
+		const isActive = name === screenName
+		screen.classList.toggle('is-active', isActive)
+		screen.setAttribute('aria-hidden', String(!isActive))
+	})
 
-	if (screenName !== 'menu' && screenName !== 'settings' && screenName !== 'load') {
-		gameState.lastNonMenuScreen = screenName
+	gameState.currentScreen = screenName
+	window.humanityProtocolSession.setCurrentScreen(screenName)
+}
+
+function isScreenActive(screen){
+	return screen.classList.contains('is-active')
+}
+
+function showMenuView(viewName){
+	const views = {
+		main: menuMainView,
+		settings: menuSettingsView,
+		load: menuLoadView
 	}
+
+	Object.entries(views).forEach(([name, view]) => {
+		const isActive = name === viewName
+		view.classList.toggle('is-active', isActive)
+		view.setAttribute('aria-hidden', String(!isActive))
+	})
+
+	gameState.menuView = views[viewName] ? viewName : 'main'
 }
 
 function updateMenuButtons(){
-	resumeButton.hidden = !gameState.hasActiveRun || !gameState.lastNonMenuScreen
-	continueButton.hidden = gameState.hasActiveRun || !gameState.hasSaves
+	resumeButton.hidden = !window.humanityProtocolSession.hasActiveRun() || !window.humanityProtocolSession.getLastNonMenuScreen()
+	continueButton.hidden = window.humanityProtocolSession.hasActiveRun() || !gameState.hasSaves
 	loadGameButton.hidden = !gameState.hasSaves
 }
 
 function setHasSaves(hasSaves){
 	gameState.hasSaves = hasSaves
-}
-
-function clearCurrentRun(){
-	gameState.currentSaveId = null
-	gameState.hasActiveRun = false
-	gameState.lastNonMenuScreen = null
-	window.humanityProtocolPopulation.stopSimulation()
-}
-
-function buildSaveSnapshot(){
-	return {
-		id: gameState.currentSaveId,
-		screen: gameState.lastNonMenuScreen,
-		label: `Save ${new Date().toISOString()}`,
-		intro: window.humanityProtocolIntro.buildIntroSnapshot(),
-		population: window.humanityProtocolPopulation.buildPopulationSnapshot(),
-		ui: window.humanityProtocolTheme.buildThemeSnapshot()
-	}
 }
 
 async function refreshSaveAvailability(){
@@ -95,17 +83,8 @@ async function refreshSaveAvailability(){
 	})
 }
 
-async function saveCurrentRun(){
-	if (!gameState.hasActiveRun || !gameState.lastNonMenuScreen || !gameState.currentSaveId) {
-		return null
-	}
-
-	const save = await window.humanityProtocol.updateSave(buildSaveSnapshot())
-	await refreshSaveAvailability()
-	return save
-}
-
 function openMainMenu(){
+	showMenuView('main')
 	updateMenuButtons()
 	showScreen('menu')
 }
@@ -118,22 +97,13 @@ function cycleTheme(){
 	window.humanityProtocolTheme.applyTheme(nextTheme)
 }
 
-function setWorldStatusAvailability(isEnabled, language = languageSelect.value || 'fr'){
-	if (isEnabled) {
-		window.humanityProtocolTools.enableTool('world-status')
-		window.humanityProtocolTools.renderTools({ language })
-		return
-	}
-
-	window.humanityProtocolTools.disableTool('world-status')
-}
-
 async function openPauseMenu(){
-	if (!gameState.hasActiveRun || !gameState.lastNonMenuScreen) {
+	if (!window.humanityProtocolSession.hasActiveRun() || !window.humanityProtocolSession.getLastNonMenuScreen()) {
 		return
 	}
 
-	await saveCurrentRun()
+	await window.humanityProtocolSession.pauseRun()
+	showMenuView('main')
 	updateMenuButtons()
 	showScreen('menu')
 }
@@ -141,20 +111,17 @@ async function openPauseMenu(){
 async function loadSettings(){
 	const settings = await window.humanityProtocol.loadSettings()
 	window.humanityProtocolI18n.applyTranslations(settings.language)
-	window.humanityProtocolPopulation.setSimulationInterval(settings.simulationIntervalSeconds)
+	window.humanityProtocolTime.setSimulationStepHours(settings.simulationStepHours)
 	window.humanityProtocolTools.renderTools({ language: settings.language })
 	fullscreenCheckbox.checked = settings.startFullscreen
 	languageSelect.value = settings.language
-	simulationIntervalSelect.value = String(settings.simulationIntervalSeconds)
+	simulationIntervalSelect.value = String(settings.simulationStepHours)
 	return settings
 }
 
 async function startIntro(){
 	const settings = await loadSettings()
-	gameState.currentSaveId = `save-${Date.now()}`
-	gameState.hasActiveRun = true
-	window.humanityProtocolPopulation.resetPopulation()
-	setWorldStatusAvailability(false, settings.language)
+	window.humanityProtocolSession.startNewRun()
 	window.humanityProtocolIntro.startIntro(settings.language)
 	showScreen('intro')
 }
@@ -167,10 +134,7 @@ async function loadSave(save){
 	}
 
 	window.humanityProtocolTheme.applyThemeFromSave(save)
-	window.humanityProtocolPopulation.restorePopulation(save)
-	setWorldStatusAvailability(save.screen !== 'intro', settings.language)
-	gameState.currentSaveId = save.id
-	gameState.hasActiveRun = true
+	window.humanityProtocolSession.restoreRun(save)
 	gameState.hasSaves = true
 	updateMenuButtons()
 
@@ -181,8 +145,8 @@ async function loadSave(save){
 		return
 	}
 
-	if (save.screen === 'title') {
-		showScreen('title')
+	if (save.screen === 'game') {
+		showScreen('game')
 	}
 }
 
@@ -203,10 +167,10 @@ async function renderSaveList(){
 async function deleteSaveEntry(saveId){
 	await window.humanityProtocolSaves.deleteSaveEntry({
 		saveId,
-		currentSaveId: gameState.currentSaveId,
-		onDeleteCurrentSave: clearCurrentRun,
+		currentSaveId: window.humanityProtocolSession.getCurrentSaveId(),
+		onDeleteCurrentSave: window.humanityProtocolSession.clearCurrentRun,
 		refreshSaveAvailability,
-		isLoadScreenVisible: () => !loadScreen.hidden,
+		isLoadScreenVisible: () => gameState.currentScreen === 'menu' && gameState.menuView === 'load',
 		renderSaveList
 	})
 
@@ -215,7 +179,8 @@ async function deleteSaveEntry(saveId){
 
 async function openLoadScreen(){
 	await renderSaveList()
-	showScreen('load')
+	showMenuView('load')
+	showScreen('menu')
 }
 
 async function applyLatestSavedTheme(){
@@ -231,9 +196,11 @@ async function applyLatestSavedTheme(){
 
 async function initialize(){
 	window.humanityProtocolTheme.applyTheme(window.humanityProtocolTheme.defaultTheme)
-	window.humanityProtocolPopulation.resetPopulation()
-	window.humanityProtocolPopulation.stopSimulation()
-	setWorldStatusAvailability(false)
+	window.humanityProtocolSession.configureSession({
+		getLanguage: () => languageSelect.value || document.documentElement.lang || 'fr',
+		refreshSaveAvailability
+	})
+	window.humanityProtocolSession.initializeSession()
 	await loadSettings()
 	await applyLatestSavedTheme()
 	await refreshSaveAvailability()
@@ -259,35 +226,27 @@ themeButton.addEventListener('click', () => {
 })
 
 resumeButton.addEventListener('click', () => {
-	if (!gameState.lastNonMenuScreen) {
+	const lastNonMenuScreen = window.humanityProtocolSession.getLastNonMenuScreen()
+
+	if (!lastNonMenuScreen) {
 		return
 	}
 
-	showScreen(gameState.lastNonMenuScreen)
+	showScreen(lastNonMenuScreen)
 
-	if (gameState.lastNonMenuScreen === 'intro') {
+	if (lastNonMenuScreen === 'intro') {
 		window.humanityProtocolIntro.resumeIntroIfNeeded()
 	}
 })
 
 settingsButton.addEventListener('click', async () => {
 	await loadSettings()
-	gameState.settingsReturnMode = gameState.currentScreen === 'menu' ? 'menu' : 'game'
-	showScreen('settings')
+	showMenuView('settings')
+	showScreen('menu')
 })
 
 backButton.addEventListener('click', () => {
-	if (gameState.settingsReturnMode === 'game' && gameState.hasActiveRun && gameState.lastNonMenuScreen) {
-		showScreen(gameState.lastNonMenuScreen)
-
-		if (gameState.lastNonMenuScreen === 'intro') {
-			window.humanityProtocolIntro.resumeIntroIfNeeded()
-		}
-
-		return
-	}
-
-	openMainMenu()
+	showMenuView('main')
 })
 
 loadBackButton.addEventListener('click', () => {
@@ -308,26 +267,26 @@ languageSelect.addEventListener('change', async () => {
 	window.humanityProtocolI18n.applyTranslations(settings.language)
 	window.humanityProtocolTools.renderTools({ language: settings.language })
 
-	if (!introScreen.hidden) {
+	if (isScreenActive(introScreen)) {
 		window.humanityProtocolIntro.applyLanguage(settings.language)
 	}
 
-	if (!loadScreen.hidden) {
+	if (gameState.currentScreen === 'menu' && gameState.menuView === 'load') {
 		renderSaveList()
 	}
 })
 
 simulationIntervalSelect.addEventListener('change', async () => {
 	const settings = await window.humanityProtocol.updateSettings({
-		simulationIntervalSeconds: Number(simulationIntervalSelect.value)
+		simulationStepHours: Number(simulationIntervalSelect.value)
 	})
 
-	window.humanityProtocolPopulation.setSimulationInterval(settings.simulationIntervalSeconds)
-	simulationIntervalSelect.value = String(settings.simulationIntervalSeconds)
+	window.humanityProtocolTime.setSimulationStepHours(settings.simulationStepHours)
+	simulationIntervalSelect.value = String(settings.simulationStepHours)
 })
 
 quitButton.addEventListener('click', async () => {
-	await saveCurrentRun()
+	await window.humanityProtocolSession.saveCurrentRun()
 	window.humanityProtocol.quit()
 })
 
@@ -337,22 +296,41 @@ introScreen.addEventListener('click', () => {
 		return
 	}
 
-	setWorldStatusAvailability(true)
-	showScreen('title')
-	saveCurrentRun()
+	window.humanityProtocolTools.enableTool('world-status')
+	window.humanityProtocolTools.renderTools({ language: languageSelect.value || 'fr' })
+	showScreen('game')
+	window.humanityProtocolSession.saveCurrentRun()
 })
 
 document.addEventListener('keydown', (event) => {
+	const speedShortcuts = new Map([
+		['@', 0],
+		['&', 1],
+		['é', 2],
+		['"', 3]
+	])
+	const requestedSpeed = speedShortcuts.get(event.key)
+
+	if (requestedSpeed !== undefined) {
+		window.humanityProtocolTime.setSpeedMultiplier(requestedSpeed)
+		return
+	}
+
 	if (event.key !== 'Escape') {
 		return
 	}
 
-	if (gameState.currentScreen === 'intro' || gameState.currentScreen === 'title') {
+	if (gameState.currentScreen === 'intro' || gameState.currentScreen === 'game') {
 		openPauseMenu()
 		return
 	}
 
-	if (gameState.currentScreen === 'menu' && gameState.hasActiveRun && gameState.lastNonMenuScreen) {
+	if (gameState.currentScreen === 'menu' && gameState.menuView !== 'main') {
+		showMenuView('main')
+		return
+	}
+
+	if (gameState.currentScreen === 'menu' && window.humanityProtocolSession.hasActiveRun() && window.humanityProtocolSession.getLastNonMenuScreen()) {
 		resumeButton.click()
 	}
 })

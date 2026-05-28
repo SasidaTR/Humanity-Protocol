@@ -1,4 +1,9 @@
 const toolRegistry = new Map()
+const toolsPanel = document.querySelector('#tools-panel')
+
+function getToolsContainer(){
+	return toolsPanel
+}
 
 function registerTool(definition){
 	if (!definition?.id) {
@@ -27,7 +32,9 @@ function enableTool(toolId){
 	}
 
 	tool.enabled = true
-	tool.onEnable?.()
+	tool.onEnable?.({
+		container: getToolsContainer()
+	})
 	return true
 }
 
@@ -39,7 +46,9 @@ function disableTool(toolId){
 	}
 
 	tool.enabled = false
-	tool.onDisable?.()
+	tool.onDisable?.({
+		container: getToolsContainer()
+	})
 	return true
 }
 
@@ -49,7 +58,10 @@ function renderTools(context = {}){
 			return
 		}
 
-		tool.render?.(context)
+		tool.render?.({
+			...context,
+			container: getToolsContainer()
+		})
 	})
 }
 
@@ -63,6 +75,7 @@ function getRegisteredTools(){
 window.humanityProtocolTools = {
 	disableTool,
 	enableTool,
+	getToolsContainer,
 	getRegisteredTools,
 	isToolEnabled,
 	registerTool,

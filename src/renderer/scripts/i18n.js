@@ -16,7 +16,7 @@ const translations = {
 			title: 'Paramètres',
 			fullscreen: 'Plein écran',
 			language: 'Langue',
-			simulationInterval: "Actualisation de la simulation (secondes)",
+			simulationInterval: "Pas d'actualisation du monde (heures de jeu)",
 			languageFr: 'Français',
 			languageEn: 'Anglais',
 			back: 'Retour au menu'
@@ -31,6 +31,8 @@ const translations = {
 			delete: 'Supprimer'
 		},
 		world: {
+			date: 'Date du jour',
+			funds: 'Fonds disponibles',
 			population: 'Population mondiale',
 			satisfaction: 'Satisfaction'
 		},
@@ -55,7 +57,7 @@ const translations = {
 			title: 'Settings',
 			fullscreen: 'Fullscreen',
 			language: 'Language',
-			simulationInterval: 'Simulation refresh (seconds)',
+			simulationInterval: 'World refresh step (game hours)',
 			languageFr: 'French',
 			languageEn: 'English',
 			back: 'Back to menu'
@@ -70,6 +72,8 @@ const translations = {
 			delete: 'Delete'
 		},
 		world: {
+			date: 'Current date',
+			funds: 'Available funds',
 			population: 'World population',
 			satisfaction: 'Satisfaction'
 		},

@@ -3,27 +3,21 @@ const INITIAL_SATISFACTION = 50
 const POPULATION_OSCILLATION_RANGE = 12_000_000
 const SATISFACTION_OSCILLATION_RANGE = 6
 const FEMALE_SHARE_OSCILLATION_RANGE = 0.008
-const DEFAULT_SIMULATION_INTERVAL_MS = 1500
-
 const populationListeners = new Set()
-let simulationTimerId = null
-let simulationIntervalMs = DEFAULT_SIMULATION_INTERVAL_MS
 
 const populationState = {
 	total: INITIAL_WORLD_POPULATION,
 	satisfaction: INITIAL_SATISFACTION,
-	sexShare: {
-		female: 0.5,
-		male: 0.5
+	demographics: {
+		sex: {
+			female: 0.5,
+			male: 0.5
+		}
 	},
 	trend: {
 		populationDelta: 0,
 		satisfactionDelta: 0,
 		femaleShareDelta: 0
-	},
-	sex: {
-		female: INITIAL_WORLD_POPULATION / 2,
-		male: INITIAL_WORLD_POPULATION / 2
 	}
 }
 
@@ -31,18 +25,16 @@ function createInitialPopulation(){
 	return {
 		total: INITIAL_WORLD_POPULATION,
 		satisfaction: INITIAL_SATISFACTION,
-		sexShare: {
-			female: 0.5,
-			male: 0.5
+		demographics: {
+			sex: {
+				female: 0.5,
+				male: 0.5
+			}
 		},
 		trend: {
 			populationDelta: 0,
 			satisfactionDelta: 0,
 			femaleShareDelta: 0
-		},
-		sex: {
-			female: INITIAL_WORLD_POPULATION / 2,
-			male: INITIAL_WORLD_POPULATION / 2
 		}
 	}
 }
@@ -51,9 +43,40 @@ function clamp(value, min, max){
 	return Math.min(Math.max(value, min), max)
 }
 
-function rebuildSexCounts(){
-	populationState.sex.female = Math.round(populationState.total * populationState.sexShare.female)
-	populationState.sex.male = populationState.total - populationState.sex.female
+function buildSexCounts(){
+	const female = Math.round(populationState.total * populationState.demographics.sex.female)
+	return {
+		female,
+		male: populationState.total - female
+	}
+}
+
+function normalizeSexShares(femaleShare){
+	const nextFemaleShare = clamp(femaleShare, 0.5 - FEMALE_SHARE_OSCILLATION_RANGE, 0.5 + FEMALE_SHARE_OSCILLATION_RANGE)
+	return {
+		female: nextFemaleShare,
+		male: 1 - nextFemaleShare
+	}
+}
+
+function resolveSavedFemaleShare(savedPopulation){
+	const savedFemaleShare = Number(savedPopulation?.demographics?.sex?.female)
+
+	if (Number.isFinite(savedFemaleShare)) {
+		return savedFemaleShare
+	}
+
+	const savedFemaleCount = Number(savedPopulation?.sex?.female)
+	const savedMaleCount = Number(savedPopulation?.sex?.male)
+	const savedTotal = Number(savedPopulation?.total)
+	const totalFromCounts = savedFemaleCount + savedMaleCount
+	const referenceTotal = savedTotal > 0 ? savedTotal : totalFromCounts
+
+	if (referenceTotal > 0 && Number.isFinite(savedFemaleCount)) {
+		return savedFemaleCount / referenceTotal
+	}
+
+	return 0.5
 }
 
 function notifyPopulationListeners(){
@@ -66,7 +89,7 @@ function notifyPopulationListeners(){
 function stepSimulation(){
 	const populationOffset = populationState.total - INITIAL_WORLD_POPULATION
 	const satisfactionOffset = populationState.satisfaction - INITIAL_SATISFACTION
-	const femaleShareOffset = populationState.sexShare.female - 0.5
+	const femaleShareOffset = populationState.demographics.sex.female - 0.5
 
 	populationState.trend.populationDelta = clamp(
 		populationState.trend.populationDelta - populationOffset * 0.015 + (Math.random() - 0.5) * 180_000,
@@ -94,53 +117,10 @@ function stepSimulation(){
 		INITIAL_SATISFACTION - SATISFACTION_OSCILLATION_RANGE,
 		INITIAL_SATISFACTION + SATISFACTION_OSCILLATION_RANGE
 	)
-	populationState.sexShare.female = clamp(
-		populationState.sexShare.female + populationState.trend.femaleShareDelta,
-		0.5 - FEMALE_SHARE_OSCILLATION_RANGE,
-		0.5 + FEMALE_SHARE_OSCILLATION_RANGE
+	populationState.demographics.sex = normalizeSexShares(
+		populationState.demographics.sex.female + populationState.trend.femaleShareDelta
 	)
-	populationState.sexShare.male = 1 - populationState.sexShare.female
-	rebuildSexCounts()
 	notifyPopulationListeners()
-}
-
-function runSimulationLoop(){
-	stepSimulation()
-	simulationTimerId = setTimeout(runSimulationLoop, simulationIntervalMs)
-}
-
-function startSimulation(){
-	if (simulationTimerId) {
-		return
-	}
-
-	simulationTimerId = setTimeout(runSimulationLoop, simulationIntervalMs)
-}
-
-function stopSimulation(){
-	if (!simulationTimerId) {
-		return
-	}
-
-	clearTimeout(simulationTimerId)
-	simulationTimerId = null
-}
-
-function setSimulationInterval(seconds){
-	const nextSeconds = Number(seconds)
-
-	if (!Number.isFinite(nextSeconds) || nextSeconds <= 0) {
-		return simulationIntervalMs / 1000
-	}
-
-	simulationIntervalMs = nextSeconds * 1000
-
-	if (simulationTimerId) {
-		stopSimulation()
-		startSimulation()
-	}
-
-	return nextSeconds
 }
 
 function subscribe(listener){
@@ -154,9 +134,10 @@ function resetPopulation(){
 	const nextPopulation = createInitialPopulation()
 	populationState.total = nextPopulation.total
 	populationState.satisfaction = nextPopulation.satisfaction
-	populationState.sexShare = { ...nextPopulation.sexShare }
+	populationState.demographics = {
+		sex: { ...nextPopulation.demographics.sex }
+	}
 	populationState.trend = { ...nextPopulation.trend }
-	populationState.sex = { ...nextPopulation.sex }
 	notifyPopulationListeners()
 	return buildPopulationSnapshot()
 }
@@ -170,34 +151,34 @@ function restorePopulation(save){
 
 	populationState.total = Number(savedPopulation.total) || INITIAL_WORLD_POPULATION
 	populationState.satisfaction = clamp(Number(savedPopulation.satisfaction) || INITIAL_SATISFACTION, 0, 100)
-	populationState.sexShare = {
-		female: clamp(Number(savedPopulation?.sex?.female) / populationState.total || 0.5, 0.485, 0.515),
-		male: 0.5
+	populationState.demographics = {
+		sex: normalizeSexShares(resolveSavedFemaleShare(savedPopulation))
 	}
-	populationState.sexShare.male = 1 - populationState.sexShare.female
 	populationState.trend = {
 		populationDelta: 0,
 		satisfactionDelta: 0,
 		femaleShareDelta: 0
 	}
-	populationState.sex = {
-		female: Number(savedPopulation?.sex?.female) || 0,
-		male: Number(savedPopulation?.sex?.male) || 0
-	}
-
-	rebuildSexCounts()
 	notifyPopulationListeners()
 
 	return buildPopulationSnapshot()
 }
 
 function buildPopulationSnapshot(){
+	const sexCounts = buildSexCounts()
 	return {
+		version: 2,
 		total: populationState.total,
 		satisfaction: populationState.satisfaction,
+		demographics: {
+			sex: {
+				female: populationState.demographics.sex.female,
+				male: populationState.demographics.sex.male
+			}
+		},
 		sex: {
-			female: populationState.sex.female,
-			male: populationState.sex.male
+			female: sexCounts.female,
+			male: sexCounts.male
 		}
 	}
 }
@@ -211,8 +192,13 @@ window.humanityProtocolPopulation = {
 	getPopulationSummary,
 	resetPopulation,
 	restorePopulation,
-	setSimulationInterval,
-	startSimulation,
-	stopSimulation,
 	subscribe
 }
+
+window.humanityProtocolTime.subscribe((timeSnapshot) => {
+	if (!timeSnapshot.didAdvanceSimulationStep) {
+		return
+	}
+
+	stepSimulation()
+})

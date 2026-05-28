@@ -20,7 +20,7 @@ Construire une expérience Electron fortement centrée sur l'interface :
 
 Le cœur du jeu repose sur une tension morale :
 
-- optimiser l'humanite
+- optimiser l'humanité
 - sans réduire l'humain à un simple système à corriger
 - tout en laissant émerger la possibilité que l'IA finisse par guider le joueur autant que l'inverse
 
@@ -31,6 +31,8 @@ Le cœur du jeu repose sur une tension morale :
 - Conserver la distance avec l'humain : le joueur voit surtout des signaux, rapports, votes, simulations et anomalies
 - Les thèmes doivent pouvoir renommer certains outils et recolorer certains éléments d'interface
 - Le document de référence principal pour le game design est `GAME_DESIGN.md`
+- Les systèmes de temps et de simulation sont encore instables : vérifier l'état réel du code avant de déduire le comportement actuel
+- Prochaine étape prévue : ajouter l'évolution des outils
 
 ## Stack actuelle
 

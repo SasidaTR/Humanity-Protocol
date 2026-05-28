@@ -1,13 +1,18 @@
 const defaultSettings = {
 	startFullscreen: true,
 	language: 'fr',
-	simulationIntervalSeconds: 1.5
+	simulationStepHours: 1
 }
 
 function mergeSettings(settings = {}){
+	const parsedSimulationStepHours = Number(settings.simulationStepHours)
+
 	return {
 		...defaultSettings,
-		...settings
+		...settings,
+		simulationStepHours: Number.isFinite(parsedSimulationStepHours)
+			? Math.max(1, Math.min(3, Math.round(parsedSimulationStepHours)))
+			: defaultSettings.simulationStepHours
 	}
 }
 

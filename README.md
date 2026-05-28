@@ -31,6 +31,13 @@ Le dépôt contient actuellement un prototype Electron simple avec une structure
 - `src/renderer` : interface, scripts et styles
 - `src/shared` : constantes partagées
 
+Le prototype contient déjà une base de simulation et d'interface pour :
+
+- un sondage de satisfaction non visuel
+- un panneau d'état mondial
+
+Les règles de temps et d'évolution du monde restent en cours d'itération. Le code du prototype ne doit donc pas être considéré comme la version définitive du comportement de simulation.
+
 ## Documents de référence
 
 - `AGENTS.md` : résumé opérationnel à lire au début d'une session
