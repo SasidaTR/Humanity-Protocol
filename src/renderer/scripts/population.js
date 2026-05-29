@@ -1,22 +1,51 @@
 const INITIAL_WORLD_POPULATION = 8_000_000_000
 const INITIAL_SATISFACTION = 50
-const POPULATION_OSCILLATION_RANGE = 12_000_000
 const SATISFACTION_OSCILLATION_RANGE = 6
 const FEMALE_SHARE_OSCILLATION_RANGE = 0.008
+const HOURS_PER_YEAR = 365.25 * 24
+const LIFE_EXPECTANCY_YEARS = 80
+const TARGET_EVENTS_PER_MINUTE = 180
+const TARGET_EVENTS_PER_HOUR = TARGET_EVENTS_PER_MINUTE * 60
+const EVENT_BALANCE_VARIATION = 0.25
+const AGE_GROUPS = {
+	age0To17: {
+		durationYears: 18,
+		initialShare: 0.215
+	},
+	age18To34: {
+		durationYears: 17,
+		initialShare: 0.235
+	},
+	age35To64: {
+		durationYears: 30,
+		initialShare: 0.37
+	},
+	age65Plus: {
+		durationYears: LIFE_EXPECTANCY_YEARS - 65,
+		initialShare: 0.18
+	}
+}
 const populationListeners = new Set()
 
 const populationState = {
 	total: INITIAL_WORLD_POPULATION,
 	satisfaction: INITIAL_SATISFACTION,
 	demographics: {
+		age: {
+			age0To17: AGE_GROUPS.age0To17.initialShare,
+			age18To34: AGE_GROUPS.age18To34.initialShare,
+			age35To64: AGE_GROUPS.age35To64.initialShare,
+			age65Plus: AGE_GROUPS.age65Plus.initialShare
+		},
 		sex: {
 			female: 0.5,
 			male: 0.5
 		}
 	},
 	trend: {
-		populationDelta: 0,
 		satisfactionDelta: 0,
+		birthBalanceDelta: 0,
+		deathBalanceDelta: 0,
 		femaleShareDelta: 0
 	}
 }
@@ -26,14 +55,21 @@ function createInitialPopulation(){
 		total: INITIAL_WORLD_POPULATION,
 		satisfaction: INITIAL_SATISFACTION,
 		demographics: {
+			age: {
+				age0To17: AGE_GROUPS.age0To17.initialShare,
+				age18To34: AGE_GROUPS.age18To34.initialShare,
+				age35To64: AGE_GROUPS.age35To64.initialShare,
+				age65Plus: AGE_GROUPS.age65Plus.initialShare
+			},
 			sex: {
 				female: 0.5,
 				male: 0.5
 			}
 		},
 		trend: {
-			populationDelta: 0,
 			satisfactionDelta: 0,
+			birthBalanceDelta: 0,
+			deathBalanceDelta: 0,
 			femaleShareDelta: 0
 		}
 	}
@@ -41,6 +77,29 @@ function createInitialPopulation(){
 
 function clamp(value, min, max){
 	return Math.min(Math.max(value, min), max)
+}
+
+function buildAgeCounts(){
+	const ageGroupIds = Object.keys(populationState.demographics.age)
+	const rawCounts = ageGroupIds.reduce((counts, ageGroupId) => {
+		counts[ageGroupId] = populationState.total * populationState.demographics.age[ageGroupId]
+		return counts
+	}, {})
+	const roundedCounts = {}
+	let assignedPopulation = 0
+
+	ageGroupIds.forEach((ageGroupId, index) => {
+		if (index === ageGroupIds.length - 1) {
+			roundedCounts[ageGroupId] = Math.max(0, populationState.total - assignedPopulation)
+			return
+		}
+
+		const roundedCount = Math.max(0, Math.round(rawCounts[ageGroupId]))
+		roundedCounts[ageGroupId] = roundedCount
+		assignedPopulation += roundedCount
+	})
+
+	return roundedCounts
 }
 
 function buildSexCounts(){
@@ -57,6 +116,59 @@ function normalizeSexShares(femaleShare){
 		female: nextFemaleShare,
 		male: 1 - nextFemaleShare
 	}
+}
+
+function normalizeAgeShares(ageShares){
+	const ageGroupIds = Object.keys(AGE_GROUPS)
+	const sanitizedShares = ageGroupIds.reduce((shares, ageGroupId) => {
+		shares[ageGroupId] = Math.max(0, Number(ageShares?.[ageGroupId]) || 0)
+		return shares
+	}, {})
+	const totalShare = ageGroupIds.reduce((sum, ageGroupId) => sum + sanitizedShares[ageGroupId], 0)
+
+	if (totalShare <= 0) {
+		return ageGroupIds.reduce((shares, ageGroupId) => {
+			shares[ageGroupId] = AGE_GROUPS[ageGroupId].initialShare
+			return shares
+		}, {})
+	}
+
+	return ageGroupIds.reduce((shares, ageGroupId) => {
+		shares[ageGroupId] = sanitizedShares[ageGroupId] / totalShare
+		return shares
+	}, {})
+}
+
+function buildAgeSharesFromCounts(savedPopulation){
+	const savedAge = savedPopulation?.age || {}
+	const totalPopulation = Number(savedPopulation?.total) || 0
+	const ageCounts = Object.keys(AGE_GROUPS).reduce((counts, ageGroupId) => {
+		counts[ageGroupId] = Math.max(0, Number(savedAge?.[ageGroupId]) || 0)
+		return counts
+	}, {})
+	const totalFromCounts = Object.values(ageCounts).reduce((sum, value) => sum + value, 0)
+	const referenceTotal = totalPopulation > 0 ? totalPopulation : totalFromCounts
+
+	if (referenceTotal <= 0) {
+		return null
+	}
+
+	return normalizeAgeShares(
+		Object.entries(ageCounts).reduce((shares, [ageGroupId, count]) => {
+			shares[ageGroupId] = count / referenceTotal
+			return shares
+		}, {})
+	)
+}
+
+function resolveSavedAgeShares(savedPopulation){
+	const savedAgeShares = savedPopulation?.demographics?.age
+
+	if (savedAgeShares && Object.keys(savedAgeShares).length > 0) {
+		return normalizeAgeShares(savedAgeShares)
+	}
+
+	return buildAgeSharesFromCounts(savedPopulation) || normalizeAgeShares()
 }
 
 function resolveSavedFemaleShare(savedPopulation){
@@ -86,20 +198,29 @@ function notifyPopulationListeners(){
 	})
 }
 
-function stepSimulation(){
-	const populationOffset = populationState.total - INITIAL_WORLD_POPULATION
+function stepSimulation(stepHours = 1){
+	const normalizedStepHours = Math.max(0, Number(stepHours) || 0)
 	const satisfactionOffset = populationState.satisfaction - INITIAL_SATISFACTION
 	const femaleShareOffset = populationState.demographics.sex.female - 0.5
+	const ageCounts = buildAgeCounts()
+	const childOutflow = ageCounts.age0To17 * normalizedStepHours / (AGE_GROUPS.age0To17.durationYears * HOURS_PER_YEAR)
+	const youngAdultOutflow = ageCounts.age18To34 * normalizedStepHours / (AGE_GROUPS.age18To34.durationYears * HOURS_PER_YEAR)
+	const matureAdultOutflow = ageCounts.age35To64 * normalizedStepHours / (AGE_GROUPS.age35To64.durationYears * HOURS_PER_YEAR)
 
-	populationState.trend.populationDelta = clamp(
-		populationState.trend.populationDelta - populationOffset * 0.015 + (Math.random() - 0.5) * 180_000,
-		-700_000,
-		700_000
-	)
 	populationState.trend.satisfactionDelta = clamp(
 		populationState.trend.satisfactionDelta - satisfactionOffset * 0.18 + (Math.random() - 0.5) * 1.2,
 		-1.8,
 		1.8
+	)
+	populationState.trend.birthBalanceDelta = clamp(
+		populationState.trend.birthBalanceDelta - populationState.trend.birthBalanceDelta * 0.08 + (Math.random() - 0.5) * 0.03,
+		-EVENT_BALANCE_VARIATION,
+		EVENT_BALANCE_VARIATION
+	)
+	populationState.trend.deathBalanceDelta = clamp(
+		populationState.trend.deathBalanceDelta - populationState.trend.deathBalanceDelta * 0.08 + (Math.random() - 0.5) * 0.03,
+		-EVENT_BALANCE_VARIATION,
+		EVENT_BALANCE_VARIATION
 	)
 	populationState.trend.femaleShareDelta = clamp(
 		populationState.trend.femaleShareDelta - femaleShareOffset * 0.22 + (Math.random() - 0.5) * 0.00022,
@@ -107,11 +228,38 @@ function stepSimulation(){
 		0.0008
 	)
 
-	populationState.total = clamp(
-		Math.round(populationState.total + populationState.trend.populationDelta),
-		INITIAL_WORLD_POPULATION - POPULATION_OSCILLATION_RANGE,
-		INITIAL_WORLD_POPULATION + POPULATION_OSCILLATION_RANGE
+	const targetDeaths = TARGET_EVENTS_PER_HOUR * normalizedStepHours
+	const deathBalanceRate = clamp(
+		1 + populationState.trend.deathBalanceDelta + ((INITIAL_SATISFACTION - populationState.satisfaction) * 0.004),
+		0.75,
+		1.25
 	)
+	const seniorDeathCapacity = Math.max(1, ageCounts.age65Plus + matureAdultOutflow)
+	const deaths = Math.min(seniorDeathCapacity, targetDeaths * deathBalanceRate)
+	const targetBirths = TARGET_EVENTS_PER_HOUR * normalizedStepHours
+	const birthBalanceRate = clamp(
+		1 + populationState.trend.birthBalanceDelta + ((populationState.satisfaction - INITIAL_SATISFACTION) * 0.004),
+		0.75,
+		1.25
+	)
+	const births = targetBirths * birthBalanceRate
+	const nextAgeCounts = {
+		age0To17: Math.max(0, ageCounts.age0To17 + births - childOutflow),
+		age18To34: Math.max(0, ageCounts.age18To34 + childOutflow - youngAdultOutflow),
+		age35To64: Math.max(0, ageCounts.age35To64 + youngAdultOutflow - matureAdultOutflow),
+		age65Plus: Math.max(0, ageCounts.age65Plus + matureAdultOutflow - deaths)
+	}
+	const nextTotalPopulation = Math.max(
+		0,
+		Math.round(
+			nextAgeCounts.age0To17 +
+			nextAgeCounts.age18To34 +
+			nextAgeCounts.age35To64 +
+			nextAgeCounts.age65Plus
+		)
+	)
+
+	populationState.total = nextTotalPopulation
 	populationState.satisfaction = clamp(
 		Math.round((populationState.satisfaction + populationState.trend.satisfactionDelta) * 10) / 10,
 		INITIAL_SATISFACTION - SATISFACTION_OSCILLATION_RANGE,
@@ -120,6 +268,7 @@ function stepSimulation(){
 	populationState.demographics.sex = normalizeSexShares(
 		populationState.demographics.sex.female + populationState.trend.femaleShareDelta
 	)
+	populationState.demographics.age = normalizeAgeShares(nextAgeCounts)
 	notifyPopulationListeners()
 }
 
@@ -135,6 +284,7 @@ function resetPopulation(){
 	populationState.total = nextPopulation.total
 	populationState.satisfaction = nextPopulation.satisfaction
 	populationState.demographics = {
+		age: { ...nextPopulation.demographics.age },
 		sex: { ...nextPopulation.demographics.sex }
 	}
 	populationState.trend = { ...nextPopulation.trend }
@@ -152,11 +302,13 @@ function restorePopulation(save){
 	populationState.total = Number(savedPopulation.total) || INITIAL_WORLD_POPULATION
 	populationState.satisfaction = clamp(Number(savedPopulation.satisfaction) || INITIAL_SATISFACTION, 0, 100)
 	populationState.demographics = {
+		age: resolveSavedAgeShares(savedPopulation),
 		sex: normalizeSexShares(resolveSavedFemaleShare(savedPopulation))
 	}
 	populationState.trend = {
-		populationDelta: 0,
 		satisfactionDelta: 0,
+		birthBalanceDelta: 0,
+		deathBalanceDelta: 0,
 		femaleShareDelta: 0
 	}
 	notifyPopulationListeners()
@@ -165,16 +317,29 @@ function restorePopulation(save){
 }
 
 function buildPopulationSnapshot(){
+	const ageCounts = buildAgeCounts()
 	const sexCounts = buildSexCounts()
 	return {
-		version: 2,
+		version: 3,
 		total: populationState.total,
 		satisfaction: populationState.satisfaction,
 		demographics: {
+			age: {
+				age0To17: populationState.demographics.age.age0To17,
+				age18To34: populationState.demographics.age.age18To34,
+				age35To64: populationState.demographics.age.age35To64,
+				age65Plus: populationState.demographics.age.age65Plus
+			},
 			sex: {
 				female: populationState.demographics.sex.female,
 				male: populationState.demographics.sex.male
 			}
+		},
+		age: {
+			age0To17: ageCounts.age0To17,
+			age18To34: ageCounts.age18To34,
+			age35To64: ageCounts.age35To64,
+			age65Plus: ageCounts.age65Plus
 		},
 		sex: {
 			female: sexCounts.female,
@@ -200,5 +365,7 @@ window.humanityProtocolTime.subscribe((timeSnapshot) => {
 		return
 	}
 
-	stepSimulation()
+	for (let stepIndex = 0; stepIndex < timeSnapshot.simulationStepsAdvanced; stepIndex += 1) {
+		stepSimulation(timeSnapshot.simulationStepHours)
+	}
 })

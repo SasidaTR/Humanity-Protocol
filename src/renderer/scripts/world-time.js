@@ -1,16 +1,25 @@
-const DEFAULT_TICK_INTERVAL_MS = 1000
 const DEFAULT_SPEED_MULTIPLIER = 1
-const SPEED_TO_SIMULATED_MINUTES_PER_TICK = {
+const ALLOWED_SIMULATION_STEP_HOURS = [
+	0.0166666667,
+	0.0833333333,
+	0.1666666667,
+	0.5,
+	1,
+	2,
+	3
+]
+const SPEED_TO_TIME_SCALE = {
 	0: 0,
-	1: 1,
-	2: 2,
-	3: 4
+	1: 60,
+	2: 120,
+	3: 240
 }
 const DEFAULT_SIMULATION_STEP_HOURS = 1
 
 const timeListeners = new Set()
 
-let tickTimerId = null
+let animationFrameId = null
+let lastFrameTimestamp = null
 let speedMultiplier = DEFAULT_SPEED_MULTIPLIER
 let simulationRequested = false
 let simulationStepHours = DEFAULT_SIMULATION_STEP_HOURS
@@ -40,6 +49,8 @@ function buildSimulationStepKey(date){
 }
 
 function buildTimeSnapshot(previousDayKey = timeState.dayKey, previousSimulationStepKey = timeState.simulationStepKey){
+	const simulationStepsAdvanced = Math.max(0, timeState.simulationStepKey - previousSimulationStepKey)
+
 	return {
 		version: 1,
 		timestamp: timeState.currentDate.getTime(),
@@ -47,7 +58,8 @@ function buildTimeSnapshot(previousDayKey = timeState.dayKey, previousSimulation
 		dayKey: timeState.dayKey,
 		didAdvanceDay: timeState.dayKey !== previousDayKey,
 		simulationStepHours,
-		didAdvanceSimulationStep: timeState.simulationStepKey !== previousSimulationStepKey,
+		didAdvanceSimulationStep: simulationStepsAdvanced > 0,
+		simulationStepsAdvanced,
 		speedMultiplier
 	}
 }
@@ -60,47 +72,64 @@ function notifyTimeListeners(previousDayKey = timeState.dayKey, previousSimulati
 	return snapshot
 }
 
-function advanceTime(){
+function advanceTime(deltaRealMs){
 	const previousDayKey = timeState.dayKey
 	const previousSimulationStepKey = timeState.simulationStepKey
-	const simulatedMinutesPerTick = SPEED_TO_SIMULATED_MINUTES_PER_TICK[speedMultiplier] ?? SPEED_TO_SIMULATED_MINUTES_PER_TICK[1]
+	const timeScale = SPEED_TO_TIME_SCALE[speedMultiplier] ?? SPEED_TO_TIME_SCALE[1]
+
+	if (timeScale <= 0 || deltaRealMs <= 0) {
+		return notifyTimeListeners(previousDayKey, previousSimulationStepKey)
+	}
+
 	timeState.currentDate = new Date(
-		timeState.currentDate.getTime() + simulatedMinutesPerTick * 60 * 1000
+		timeState.currentDate.getTime() + deltaRealMs * timeScale
 	)
 	timeState.dayKey = buildDayKey(timeState.currentDate)
 	timeState.simulationStepKey = buildSimulationStepKey(timeState.currentDate)
-	notifyTimeListeners(previousDayKey, previousSimulationStepKey)
+	return notifyTimeListeners(previousDayKey, previousSimulationStepKey)
 }
 
-function runTimeLoop(){
+function runTimeLoop(frameTimestamp){
 	if (!simulationRequested || speedMultiplier === 0) {
-		tickTimerId = null
+		animationFrameId = null
+		lastFrameTimestamp = null
 		return
 	}
 
-	advanceTime()
-	tickTimerId = setTimeout(runTimeLoop, DEFAULT_TICK_INTERVAL_MS)
+	if (lastFrameTimestamp === null) {
+		lastFrameTimestamp = frameTimestamp
+		animationFrameId = requestAnimationFrame(runTimeLoop)
+		return
+	}
+
+	const deltaRealMs = Math.min(250, Math.max(0, frameTimestamp - lastFrameTimestamp))
+	lastFrameTimestamp = frameTimestamp
+	advanceTime(deltaRealMs)
+	animationFrameId = requestAnimationFrame(runTimeLoop)
 }
 
 function startSimulation(){
 	simulationRequested = true
 
-	if (tickTimerId || speedMultiplier === 0) {
+	if (animationFrameId || speedMultiplier === 0) {
 		return
 	}
 
-	tickTimerId = setTimeout(runTimeLoop, DEFAULT_TICK_INTERVAL_MS)
+	lastFrameTimestamp = null
+	animationFrameId = requestAnimationFrame(runTimeLoop)
 }
 
 function stopSimulation(){
 	simulationRequested = false
 
-	if (!tickTimerId) {
+	if (!animationFrameId) {
+		lastFrameTimestamp = null
 		return
 	}
 
-	clearTimeout(tickTimerId)
-	tickTimerId = null
+	cancelAnimationFrame(animationFrameId)
+	animationFrameId = null
+	lastFrameTimestamp = null
 }
 
 function setSimulationStepHours(nextStepHours){
@@ -110,7 +139,13 @@ function setSimulationStepHours(nextStepHours){
 		return simulationStepHours
 	}
 
-	simulationStepHours = Math.max(1, Math.min(3, Math.round(parsedStepHours)))
+	const resolvedStepHours = ALLOWED_SIMULATION_STEP_HOURS.find((value) => value === parsedStepHours)
+
+	if (!resolvedStepHours) {
+		return simulationStepHours
+	}
+
+	simulationStepHours = resolvedStepHours
 	timeState.simulationStepKey = buildSimulationStepKey(timeState.currentDate)
 	notifyTimeListeners(timeState.dayKey, timeState.simulationStepKey)
 	return simulationStepHours
@@ -126,19 +161,21 @@ function setSpeedMultiplier(nextMultiplier){
 	speedMultiplier = Math.max(0, Math.min(3, Math.round(parsedMultiplier)))
 
 	if (speedMultiplier === 0) {
-		if (tickTimerId) {
-			clearTimeout(tickTimerId)
-			tickTimerId = null
+		if (animationFrameId) {
+			cancelAnimationFrame(animationFrameId)
+			animationFrameId = null
 		}
+		lastFrameTimestamp = null
 		return speedMultiplier
 	}
 
 	if (simulationRequested) {
-		if (tickTimerId) {
-			clearTimeout(tickTimerId)
-			tickTimerId = null
+		if (animationFrameId) {
+			cancelAnimationFrame(animationFrameId)
+			animationFrameId = null
 		}
-		tickTimerId = setTimeout(runTimeLoop, DEFAULT_TICK_INTERVAL_MS)
+		lastFrameTimestamp = null
+		animationFrameId = requestAnimationFrame(runTimeLoop)
 	}
 
 	return speedMultiplier

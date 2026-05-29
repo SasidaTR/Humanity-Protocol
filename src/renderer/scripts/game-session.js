@@ -23,13 +23,26 @@ function getLanguage(){
 function setWorldStatusAvailability(isEnabled){
 	const language = getLanguage()
 
-	if (isEnabled) {
+	if (!sessionState.hasActiveRun || sessionState.lastNonMenuScreen !== 'game') {
+		window.humanityProtocolTools.disableTool('world-status')
+		return
+	}
+
+	const toolOverride = window.humanityProtocolDebug.getToolOverride('world-status')
+	const shouldEnable = toolOverride === null ? isEnabled : toolOverride
+
+	if (shouldEnable) {
 		window.humanityProtocolTools.enableTool('world-status')
 		window.humanityProtocolTools.renderTools({ language })
 		return
 	}
 
 	window.humanityProtocolTools.disableTool('world-status')
+}
+
+function syncToolAvailability(){
+	const isWorldStatusAvailable = sessionState.hasActiveRun && sessionState.lastNonMenuScreen !== 'intro'
+	setWorldStatusAvailability(isWorldStatusAvailable)
 }
 
 function syncSimulationWithScreen(screenName){
@@ -121,6 +134,8 @@ function setCurrentScreen(screenName){
 	if (resumableScreens.has(screenName)) {
 		sessionState.lastNonMenuScreen = screenName
 	}
+
+	syncToolAvailability()
 }
 
 function configureSession(nextDependencies = {}){
@@ -134,7 +149,7 @@ function initializeSession(){
 	window.humanityProtocolFunds.resetFunds()
 	window.humanityProtocolTime.stopSimulation()
 	stopAutosave()
-	setWorldStatusAvailability(false)
+	syncToolAvailability()
 }
 
 function clearCurrentRun(){
@@ -147,7 +162,7 @@ function clearCurrentRun(){
 	window.humanityProtocolPopulation.resetPopulation()
 	window.humanityProtocolTime.stopSimulation()
 	stopAutosave()
-	setWorldStatusAvailability(false)
+	syncToolAvailability()
 }
 
 function startNewRun(){
@@ -158,7 +173,7 @@ function startNewRun(){
 	window.humanityProtocolPopulation.resetPopulation()
 	window.humanityProtocolSatisfactionSurvey.resetSurvey()
 	window.humanityProtocolFunds.resetFunds()
-	setWorldStatusAvailability(false)
+	syncToolAvailability()
 }
 
 function restoreRun(save){
@@ -169,7 +184,7 @@ function restoreRun(save){
 	window.humanityProtocolPopulation.restorePopulation(save)
 	window.humanityProtocolSatisfactionSurvey.restoreSurvey(save)
 	window.humanityProtocolFunds.restoreFunds(save)
-	setWorldStatusAvailability(save.screen !== 'intro')
+	syncToolAvailability()
 }
 
 async function pauseRun(){
@@ -194,3 +209,7 @@ window.humanityProtocolSession = {
 	setCurrentScreen,
 	startNewRun
 }
+
+window.humanityProtocolDebug.subscribe(() => {
+	syncToolAvailability()
+})

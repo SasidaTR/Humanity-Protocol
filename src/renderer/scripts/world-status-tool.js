@@ -24,7 +24,12 @@ function ensureWorldPanel(container){
 		worldFunds = document.createElement('p')
 		worldFunds.id = 'world-funds'
 
-		worldPanel.append(worldDate, worldPopulation, worldSatisfaction, worldFunds)
+		worldPanel.append(
+			worldDate,
+			worldPopulation,
+			worldSatisfaction,
+			worldFunds
+		)
 	}
 
 	if (!worldPanel.isConnected) {
@@ -50,33 +55,48 @@ function formatCurrentDate(timestamp, language){
 	}).format(new Date(timestamp))
 }
 
+function formatCurrentTime(timestamp, language){
+	return new Intl.DateTimeFormat(language, {
+		hour: '2-digit',
+		minute: '2-digit',
+		second: '2-digit'
+	}).format(new Date(timestamp))
+}
+
 function hideWorldPanel(){
 	if (worldPanel?.isConnected) {
 		worldPanel.remove()
 	}
 }
 
-function showWorldPanel({ container }){
-	ensureWorldPanel(container)
+function showWorldPanel({ toolBody }){
+	ensureWorldPanel(toolBody)
 }
 
-function renderWorldStatusTool({ language = 'fr', container } = {}){
+function renderWorldStatusTool({ language = 'fr', toolBody } = {}){
 	currentLanguage = language === 'en' ? 'en' : 'fr'
-	ensureWorldPanel(container)
+	ensureWorldPanel(toolBody)
 	const worldTime = window.humanityProtocolTime.getTimeSummary()
 	const population = window.humanityProtocolPopulation.getPopulationSummary()
 	const survey = window.humanityProtocolSatisfactionSurvey.getSurveySummary()
 	const funds = window.humanityProtocolFunds.getFundsSummary()
-	const dateLabel = window.humanityProtocolI18n.getTranslation(currentLanguage, 'world.date')
 	const populationLabel = window.humanityProtocolI18n.getTranslation(currentLanguage, 'world.population')
 	const satisfactionLabel = window.humanityProtocolI18n.getTranslation(currentLanguage, 'world.satisfaction')
 	const fundsLabel = window.humanityProtocolI18n.getTranslation(currentLanguage, 'world.funds')
+	const showCurrentTime = window.humanityProtocolDebug.isToolEvolutionEnabled('world-status', 'show-current-time')
 
-	if (!worldDate || !worldPopulation || !worldSatisfaction || !worldFunds) {
+	if (
+		!worldDate ||
+		!worldPopulation ||
+		!worldSatisfaction ||
+		!worldFunds
+	) {
 		return
 	}
 
-	worldDate.textContent = `${dateLabel} : ${formatCurrentDate(worldTime.timestamp, currentLanguage)}`
+	worldDate.textContent = showCurrentTime
+		? `${formatCurrentDate(worldTime.timestamp, currentLanguage)} ${formatCurrentTime(worldTime.timestamp, currentLanguage)}`
+		: formatCurrentDate(worldTime.timestamp, currentLanguage)
 	worldPopulation.textContent = `${populationLabel} : ${formatPopulation(population.total, currentLanguage)}`
 	worldSatisfaction.textContent = `${satisfactionLabel} : ${survey.satisfaction}%`
 	worldFunds.textContent = `${fundsLabel} : ${formatFunds(funds.available, currentLanguage)}`
@@ -115,6 +135,13 @@ window.humanityProtocolFunds.subscribe(() => {
 })
 
 window.humanityProtocolTools.registerTool({
+	debugLabel: 'État mondial',
+	evolutions: [
+		{
+			id: 'show-current-time',
+			label: "Afficher l’heure actuelle"
+		}
+	],
 	id: 'world-status',
 	enabled: false,
 	onDisable: hideWorldPanel,

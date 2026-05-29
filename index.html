@@ -17,8 +17,8 @@
             <button type="button" id="continue-button" data-i18n="menu.continue" hidden></button>
             <button type="button" id="new-game-button" data-i18n="menu.newGame"></button>
             <button type="button" id="load-game-button" data-i18n="menu.loadGame" hidden></button>
-            <button type="button" id="theme-button" data-i18n="menu.theme"></button>
             <button type="button" id="settings-button" data-i18n="menu.settings"></button>
+            <button type="button" id="debug-button" data-i18n="menu.debug"></button>
             <button type="button" id="quit-button" data-i18n="menu.quit"></button>
           </nav>
         </div>
@@ -38,6 +38,10 @@
           <div>
             <label for="simulation-interval-select" data-i18n="settings.simulationInterval"></label>
             <select id="simulation-interval-select">
+              <option value="0.0166666667">1 min</option>
+              <option value="0.0833333333">5 min</option>
+              <option value="0.1666666667">10 min</option>
+              <option value="0.5">30 min</option>
               <option value="1">1 h</option>
               <option value="2">2 h</option>
               <option value="3">3 h</option>
@@ -45,6 +49,20 @@
           </div>
           <div>
             <button type="button" id="back-button" data-i18n="settings.back"></button>
+          </div>
+        </div>
+        <div id="menu-debug-view" class="menu-view">
+          <h1 data-i18n="debug.title"></h1>
+          <div class="debug-section">
+            <label for="debug-theme-select" data-i18n="debug.theme"></label>
+            <select id="debug-theme-select"></select>
+          </div>
+          <section class="debug-section" aria-labelledby="debug-tools-title">
+            <h2 id="debug-tools-title" data-i18n="debug.tools"></h2>
+            <div id="debug-tools-list" class="debug-list"></div>
+          </section>
+          <div>
+            <button type="button" id="debug-back-button" data-i18n="debug.back"></button>
           </div>
         </div>
         <div id="menu-load-view" class="menu-view">
@@ -62,6 +80,7 @@
     <script src="src/renderer/scripts/i18n.js"></script>
     <script src="src/renderer/scripts/theme.js"></script>
     <script src="src/renderer/scripts/tools.js"></script>
+    <script src="src/renderer/scripts/debug-state.js"></script>
     <script src="src/renderer/scripts/world-time.js"></script>
     <script src="src/renderer/scripts/population.js"></script>
     <script src="src/renderer/scripts/satisfaction-survey.js"></script>

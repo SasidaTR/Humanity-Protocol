@@ -57,10 +57,13 @@ body {
 	padding: 2rem 1rem;
 	box-sizing: border-box;
 	text-align: center;
+	position: relative;
+	z-index: 9999;
 }
 
 #menu-screen nav,
 #menu-settings-view,
+#menu-debug-view,
 #menu-load-view {
 	display: flex;
 	flex-direction: column;
@@ -70,12 +73,14 @@ body {
 
 #menu-main-view,
 #menu-settings-view,
+#menu-debug-view,
 #menu-load-view {
 	display: none;
 }
 
 #menu-main-view.is-active,
 #menu-settings-view.is-active,
+#menu-debug-view.is-active,
 #menu-load-view.is-active {
 	display: flex;
 	flex-direction: column;
@@ -86,15 +91,139 @@ body {
 	min-width: 14rem;
 }
 
-#tools-panel {
-	position: fixed;
-	top: 1rem;
-	right: 1rem;
-	text-align: right;
+#menu-debug-view {
+	width: min(32rem, 100%);
 }
 
-#tools-panel p {
+.debug-section {
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	padding: 1rem;
+	box-sizing: border-box;
+	background: color-mix(in srgb, var(--color-surface) 84%, transparent);
+	border: 1px solid color-mix(in srgb, var(--color-text) 25%, transparent);
+	border-radius: var(--shape-radius);
+}
+
+.debug-section h2 {
 	margin: 0;
+	font-size: 1rem;
+}
+
+.debug-section-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+}
+
+.debug-inline-label,
+.debug-option {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.debug-list {
+	width: 100%;
+	display: grid;
+	gap: 0.5rem;
+}
+
+.debug-tool {
+	display: grid;
+	gap: 0.5rem;
+	padding: 0.75rem 0;
+	border-top: 1px solid color-mix(in srgb, var(--color-text) 15%, transparent);
+}
+
+.debug-tool:first-child {
+	padding-top: 0;
+	border-top: 0;
+}
+
+.debug-evolutions {
+	display: grid;
+	gap: 0.4rem;
+	padding-left: 1.5rem;
+}
+
+select {
+	background: var(--color-surface);
+	color: var(--color-text);
+	border: 1px solid var(--color-text);
+	border-radius: var(--shape-radius);
+	font: inherit;
+	padding: 0.35rem 0.5rem;
+}
+
+#tools-panel {
+	position: fixed;
+	inset: 0;
+	pointer-events: none;
+}
+
+.tool-window {
+	position: fixed;
+	min-width: 18rem;
+	max-width: min(28rem, calc(100vw - 24px));
+	background: color-mix(in srgb, var(--color-surface) 90%, transparent);
+	border: 1px solid color-mix(in srgb, var(--color-text) 35%, transparent);
+	border-radius: var(--shape-radius);
+	box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-text) 10%, transparent);
+	pointer-events: auto;
+	overflow: hidden;
+	backdrop-filter: blur(8px);
+}
+
+.tool-window.is-collapsed .tool-window-header {
+	border-bottom: 0;
+}
+
+.tool-window-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.75rem;
+	padding: 0.55rem 0.7rem;
+	border-bottom: 1px solid color-mix(in srgb, var(--color-text) 20%, transparent);
+	cursor: grab;
+	user-select: none;
+}
+
+.tool-window-header:active {
+	cursor: grabbing;
+}
+
+.tool-window-title {
+	margin: 0;
+	font-size: 0.95rem;
+	font-weight: 600;
+}
+
+.tool-window-actions {
+	display: flex;
+	align-items: center;
+}
+
+.tool-window-toggle {
+	min-width: 2rem;
+	padding: 0.15rem 0.45rem;
+	line-height: 1;
+}
+
+.tool-window-body {
+	padding: 0.7rem;
+}
+
+.tool-window-body p {
+	margin: 0;
+}
+
+.tool-window-body p + p {
+	margin-top: 0.35rem;
 }
 
 button {

@@ -128,7 +128,9 @@ window.humanityProtocolTime.subscribe((timeSnapshot) => {
 		return
 	}
 
-	applyPopulationSnapshot(window.humanityProtocolPopulation.getPopulationSummary())
+	for (let stepIndex = 0; stepIndex < timeSnapshot.simulationStepsAdvanced; stepIndex += 1) {
+		applyPopulationSnapshot(window.humanityProtocolPopulation.getPopulationSummary())
+	}
 })
 
 window.humanityProtocolSatisfactionSurvey = {

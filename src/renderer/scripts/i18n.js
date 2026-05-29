@@ -7,9 +7,9 @@ const translations = {
 			newGame: 'Nouvelle partie',
 			continue: 'Continuer',
 			loadGame: 'Charger partie',
-			theme: 'Changer le thème',
 			resume: 'Reprendre',
 			settings: 'Paramètres',
+			debug: 'Debug',
 			quit: 'Quitter'
 		},
 		settings: {
@@ -30,8 +30,13 @@ const translations = {
 			empty: 'Aucune sauvegarde',
 			delete: 'Supprimer'
 		},
+		debug: {
+			title: 'Debug',
+			theme: 'Thème',
+			tools: 'Outils',
+			back: 'Retour au menu'
+		},
 		world: {
-			date: 'Date du jour',
 			funds: 'Fonds disponibles',
 			population: 'Population mondiale',
 			satisfaction: 'Satisfaction'
@@ -48,9 +53,9 @@ const translations = {
 			newGame: 'New game',
 			continue: 'Continue',
 			loadGame: 'Load game',
-			theme: 'Change theme',
 			resume: 'Resume',
 			settings: 'Settings',
+			debug: 'Debug',
 			quit: 'Quit'
 		},
 		settings: {
@@ -71,8 +76,13 @@ const translations = {
 			empty: 'No saves',
 			delete: 'Delete'
 		},
+		debug: {
+			title: 'Debug',
+			theme: 'Theme',
+			tools: 'Tools',
+			back: 'Back to menu'
+		},
 		world: {
-			date: 'Current date',
 			funds: 'Available funds',
 			population: 'World population',
 			satisfaction: 'Satisfaction'
