@@ -20,29 +20,30 @@ function getLanguage(){
 	return sessionDependencies.getLanguage?.() || 'fr'
 }
 
-function setWorldStatusAvailability(isEnabled){
+function setToolAvailability(toolId, isEnabled){
 	const language = getLanguage()
 
 	if (!sessionState.hasActiveRun || sessionState.lastNonMenuScreen !== 'game') {
-		window.humanityProtocolTools.disableTool('world-status')
+		window.humanityProtocolTools.disableTool(toolId)
 		return
 	}
 
-	const toolOverride = window.humanityProtocolDebug.getToolOverride('world-status')
+	const toolOverride = window.humanityProtocolDebug.getToolOverride(toolId)
 	const shouldEnable = toolOverride === null ? isEnabled : toolOverride
 
 	if (shouldEnable) {
-		window.humanityProtocolTools.enableTool('world-status')
+		window.humanityProtocolTools.enableTool(toolId)
 		window.humanityProtocolTools.renderTools({ language })
 		return
 	}
 
-	window.humanityProtocolTools.disableTool('world-status')
+	window.humanityProtocolTools.disableTool(toolId)
 }
 
 function syncToolAvailability(){
 	const isWorldStatusAvailable = sessionState.hasActiveRun && sessionState.lastNonMenuScreen !== 'intro'
-	setWorldStatusAvailability(isWorldStatusAvailable)
+	setToolAvailability('world-status', isWorldStatusAvailable)
+	setToolAvailability('satisfaction-vote', isWorldStatusAvailable)
 }
 
 function syncSimulationWithScreen(screenName){
@@ -122,7 +123,10 @@ function buildSaveSnapshot(){
 		population: window.humanityProtocolPopulation.buildPopulationSnapshot(),
 		survey: window.humanityProtocolSatisfactionSurvey.buildSurveySnapshot(),
 		funds: window.humanityProtocolFunds.buildFundsSnapshot(),
-		ui: window.humanityProtocolTheme.buildThemeSnapshot()
+		ui: {
+			...window.humanityProtocolTheme.buildThemeSnapshot(),
+			toolLayout: window.humanityProtocolTools.buildLayoutSnapshot()
+		}
 	}
 }
 
@@ -169,6 +173,7 @@ function startNewRun(){
 	sessionState.currentSaveId = `save-${Date.now()}`
 	sessionState.hasActiveRun = true
 	sessionState.lastNonMenuScreen = null
+	window.humanityProtocolTools.centerToolLayout()
 	window.humanityProtocolTime.resetTime()
 	window.humanityProtocolPopulation.resetPopulation()
 	window.humanityProtocolSatisfactionSurvey.resetSurvey()
@@ -180,6 +185,11 @@ function restoreRun(save){
 	sessionState.currentSaveId = save.id
 	sessionState.hasActiveRun = true
 	sessionState.lastNonMenuScreen = save.screen
+	if (save?.ui?.toolLayout) {
+		window.humanityProtocolTools.restoreLayout(save.ui.toolLayout)
+	} else {
+		window.humanityProtocolTools.centerToolLayout()
+	}
 	window.humanityProtocolTime.restoreTime(save)
 	window.humanityProtocolPopulation.restorePopulation(save)
 	window.humanityProtocolSatisfactionSurvey.restoreSurvey(save)

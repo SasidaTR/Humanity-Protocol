@@ -12,9 +12,14 @@ function getToolsContainer(){
 }
 
 function getDefaultToolPosition(index = toolRegistry.size){
+	const estimatedWidth = 320
+	const estimatedHeight = 220
+	const centeredX = Math.max(12, Math.round((window.innerWidth - estimatedWidth) / 2))
+	const centeredY = Math.max(12, Math.round((window.innerHeight - estimatedHeight) / 2))
+
 	return {
-		x: 24 + (index * 28),
-		y: 24 + (index * 28)
+		x: centeredX,
+		y: centeredY
 	}
 }
 
@@ -45,6 +50,25 @@ function updateCollapsedState(tool){
 	tool.body.hidden = tool.collapsed
 	tool.collapseButton.textContent = tool.collapsed ? '+' : '-'
 	tool.collapseButton.setAttribute('aria-expanded', String(!tool.collapsed))
+}
+
+function resolveToolTitle(tool, language = 'fr'){
+	if (typeof tool.getTitle === 'function') {
+		return tool.getTitle(language)
+	}
+
+	return tool.title
+}
+
+function updateToolShellText(tool, language = 'fr'){
+	if (!tool?.shell || !tool.titleElement || !tool.collapseButton) {
+		return
+	}
+
+	const resolvedTitle = resolveToolTitle(tool, language)
+	tool.titleElement.textContent = resolvedTitle
+	tool.shell.setAttribute('aria-label', resolvedTitle)
+	tool.collapseButton.setAttribute('aria-label', `Reduire ${resolvedTitle}`)
 }
 
 function stopDragging(){
@@ -93,14 +117,12 @@ function ensureToolShell(tool){
 		const shell = document.createElement('section')
 		shell.className = 'tool-window'
 		shell.dataset.toolId = tool.id
-		shell.setAttribute('aria-label', tool.title)
 
 		const header = document.createElement('header')
 		header.className = 'tool-window-header'
 
 		const title = document.createElement('h2')
 		title.className = 'tool-window-title'
-		title.textContent = tool.title
 
 		const actions = document.createElement('div')
 		actions.className = 'tool-window-actions'
@@ -139,6 +161,7 @@ function ensureToolShell(tool){
 		shell.append(header, body)
 		tool.shell = shell
 		tool.header = header
+		tool.titleElement = title
 		tool.body = body
 		tool.collapseButton = collapseButton
 		bringToolToFront(tool)
@@ -149,6 +172,8 @@ function ensureToolShell(tool){
 	if (!tool.shell.isConnected) {
 		toolsPanel.append(tool.shell)
 	}
+
+	updateToolShellText(tool, document.documentElement.lang || 'fr')
 
 	return tool.shell
 }
@@ -168,6 +193,7 @@ function registerTool(definition){
 		layer: 0,
 		shell: null,
 		header: null,
+		titleElement: null,
 		body: null,
 		collapseButton: null,
 		...definition
@@ -233,6 +259,63 @@ function renderTools(context = {}){
 	})
 }
 
+function buildLayoutSnapshot(){
+	return {
+		tools: [...toolRegistry.values()].reduce((snapshot, tool) => {
+			snapshot[tool.id] = {
+				position: {
+					x: Math.round(Number(tool.position?.x) || 0),
+					y: Math.round(Number(tool.position?.y) || 0)
+				},
+				collapsed: Boolean(tool.collapsed),
+				layer: Math.max(0, Math.round(Number(tool.layer) || 0))
+			}
+			return snapshot
+		}, {})
+	}
+}
+
+function restoreLayout(layoutSnapshot){
+	const savedTools = layoutSnapshot?.tools || {}
+	let highestLayer = 0
+
+	toolRegistry.forEach((tool) => {
+		const savedTool = savedTools[tool.id]
+
+		if (!savedTool) {
+			return
+		}
+
+		tool.position = {
+			x: Math.max(12, Math.round(Number(savedTool.position?.x) || tool.position.x)),
+			y: Math.max(12, Math.round(Number(savedTool.position?.y) || tool.position.y))
+		}
+		tool.collapsed = Boolean(savedTool.collapsed)
+		tool.layer = Math.max(0, Math.round(Number(savedTool.layer) || 0))
+		highestLayer = Math.max(highestLayer, tool.layer)
+		updateCollapsedState(tool)
+		applyToolPosition(tool)
+
+		if (tool.shell) {
+			tool.shell.style.zIndex = String(tool.layer)
+		}
+	})
+
+	nextToolLayer = Math.max(1, highestLayer + 1)
+}
+
+function centerToolLayout(){
+	nextToolLayer = 1
+
+	toolRegistry.forEach((tool) => {
+		tool.position = getDefaultToolPosition()
+		tool.collapsed = false
+		tool.layer = 0
+		updateCollapsedState(tool)
+		applyToolPosition(tool)
+	})
+}
+
 function getRegisteredTools(){
 	return [...toolRegistry.values()].map((tool) => ({
 		id: tool.id,
@@ -243,11 +326,14 @@ function getRegisteredTools(){
 }
 
 window.humanityProtocolTools = {
+	buildLayoutSnapshot,
 	disableTool,
 	enableTool,
 	getToolsContainer,
 	getRegisteredTools,
 	isToolEnabled,
+	centerToolLayout,
 	registerTool,
+	restoreLayout,
 	renderTools
 }

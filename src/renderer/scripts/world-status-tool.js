@@ -1,6 +1,9 @@
 let currentLanguage = 'fr'
 let worldPanel = null
 let worldDate = null
+let worldDateValue = null
+let worldTimeValue = null
+let worldSpeedValue = null
 let worldPopulation = null
 let worldSatisfaction = null
 let worldFunds = null
@@ -17,6 +20,13 @@ function ensureWorldPanel(container){
 
 		worldDate = document.createElement('p')
 		worldDate.id = 'world-date'
+		worldDateValue = document.createElement('span')
+		worldDateValue.className = 'world-date-value'
+		worldTimeValue = document.createElement('span')
+		worldTimeValue.className = 'world-time-value'
+		worldSpeedValue = document.createElement('span')
+		worldSpeedValue.className = 'world-speed-value'
+		worldDate.append(worldDateValue, worldTimeValue, worldSpeedValue)
 		worldPopulation = document.createElement('p')
 		worldPopulation.id = 'world-population'
 		worldSatisfaction = document.createElement('p')
@@ -63,6 +73,21 @@ function formatCurrentTime(timestamp, language){
 	}).format(new Date(timestamp))
 }
 
+function formatSimulationSpeedIcon(speedMultiplier){
+	switch (speedMultiplier) {
+		case 0:
+			return '⏸'
+		case 1:
+			return '▶'
+		case 2:
+			return '▶▶'
+		case 3:
+			return '▶▶▶'
+		default:
+			return '▶'
+	}
+}
+
 function hideWorldPanel(){
 	if (worldPanel?.isConnected) {
 		worldPanel.remove()
@@ -87,6 +112,9 @@ function renderWorldStatusTool({ language = 'fr', toolBody } = {}){
 
 	if (
 		!worldDate ||
+		!worldDateValue ||
+		!worldTimeValue ||
+		!worldSpeedValue ||
 		!worldPopulation ||
 		!worldSatisfaction ||
 		!worldFunds
@@ -94,9 +122,10 @@ function renderWorldStatusTool({ language = 'fr', toolBody } = {}){
 		return
 	}
 
-	worldDate.textContent = showCurrentTime
-		? `${formatCurrentDate(worldTime.timestamp, currentLanguage)} ${formatCurrentTime(worldTime.timestamp, currentLanguage)}`
-		: formatCurrentDate(worldTime.timestamp, currentLanguage)
+	worldDateValue.textContent = formatCurrentDate(worldTime.timestamp, currentLanguage)
+	worldTimeValue.textContent = showCurrentTime ? formatCurrentTime(worldTime.timestamp, currentLanguage) : ''
+	worldTimeValue.hidden = !showCurrentTime
+	worldSpeedValue.textContent = formatSimulationSpeedIcon(worldTime.displaySpeedMultiplier)
 	worldPopulation.textContent = `${populationLabel} : ${formatPopulation(population.total, currentLanguage)}`
 	worldSatisfaction.textContent = `${satisfactionLabel} : ${survey.satisfaction}%`
 	worldFunds.textContent = `${fundsLabel} : ${formatFunds(funds.available, currentLanguage)}`
@@ -142,6 +171,7 @@ window.humanityProtocolTools.registerTool({
 			label: "Afficher l’heure actuelle"
 		}
 	],
+	getTitle: (language) => language === 'en' ? 'World Status' : 'État mondial',
 	id: 'world-status',
 	enabled: false,
 	onDisable: hideWorldPanel,

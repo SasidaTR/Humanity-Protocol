@@ -1,12 +1,20 @@
 const INITIAL_WORLD_POPULATION = 8_000_000_000
-const INITIAL_SATISFACTION = 50
+const INITIAL_SATISFACTION = 60
 const SATISFACTION_OSCILLATION_RANGE = 6
 const FEMALE_SHARE_OSCILLATION_RANGE = 0.008
+const WORKER_SHARE_OSCILLATION_RANGE = 0.08
 const HOURS_PER_YEAR = 365.25 * 24
 const LIFE_EXPECTANCY_YEARS = 80
 const TARGET_EVENTS_PER_MINUTE = 180
 const TARGET_EVENTS_PER_HOUR = TARGET_EVENTS_PER_MINUTE * 60
 const EVENT_BALANCE_VARIATION = 0.25
+const INCOME_LEVEL_GROUPS = {
+	veryPoor: 0.1,
+	poor: 0.51,
+	middleIncome: 0.17,
+	comfortableIncome: 0.15,
+	highIncome: 0.07
+}
 const AGE_GROUPS = {
 	age0To17: {
 		durationYears: 18,
@@ -37,6 +45,17 @@ const populationState = {
 			age35To64: AGE_GROUPS.age35To64.initialShare,
 			age65Plus: AGE_GROUPS.age65Plus.initialShare
 		},
+		activity: {
+			workers: 0.6,
+			nonWorkers: 0.4
+		},
+		incomeLevel: {
+			veryPoor: INCOME_LEVEL_GROUPS.veryPoor,
+			poor: INCOME_LEVEL_GROUPS.poor,
+			middleIncome: INCOME_LEVEL_GROUPS.middleIncome,
+			comfortableIncome: INCOME_LEVEL_GROUPS.comfortableIncome,
+			highIncome: INCOME_LEVEL_GROUPS.highIncome
+		},
 		sex: {
 			female: 0.5,
 			male: 0.5
@@ -46,6 +65,7 @@ const populationState = {
 		satisfactionDelta: 0,
 		birthBalanceDelta: 0,
 		deathBalanceDelta: 0,
+		workerShareDelta: 0,
 		femaleShareDelta: 0
 	}
 }
@@ -61,6 +81,17 @@ function createInitialPopulation(){
 				age35To64: AGE_GROUPS.age35To64.initialShare,
 				age65Plus: AGE_GROUPS.age65Plus.initialShare
 			},
+			activity: {
+				workers: 0.6,
+				nonWorkers: 0.4
+			},
+			incomeLevel: {
+				veryPoor: INCOME_LEVEL_GROUPS.veryPoor,
+				poor: INCOME_LEVEL_GROUPS.poor,
+				middleIncome: INCOME_LEVEL_GROUPS.middleIncome,
+				comfortableIncome: INCOME_LEVEL_GROUPS.comfortableIncome,
+				highIncome: INCOME_LEVEL_GROUPS.highIncome
+			},
 			sex: {
 				female: 0.5,
 				male: 0.5
@@ -70,6 +101,7 @@ function createInitialPopulation(){
 			satisfactionDelta: 0,
 			birthBalanceDelta: 0,
 			deathBalanceDelta: 0,
+			workerShareDelta: 0,
 			femaleShareDelta: 0
 		}
 	}
@@ -110,12 +142,76 @@ function buildSexCounts(){
 	}
 }
 
+function buildActivityCounts(){
+	const ageCounts = buildAgeCounts()
+	const workingAgePopulation = ageCounts.age18To34 + ageCounts.age35To64
+	const workers = Math.round(workingAgePopulation * populationState.demographics.activity.workers)
+
+	return {
+		workingAgePopulation,
+		workers,
+		nonWorkers: Math.max(0, workingAgePopulation - workers)
+	}
+}
+
+function buildIncomeLevelCounts(){
+	const incomeLevelIds = Object.keys(populationState.demographics.incomeLevel)
+	const rawCounts = incomeLevelIds.reduce((counts, incomeLevelId) => {
+		counts[incomeLevelId] = populationState.total * populationState.demographics.incomeLevel[incomeLevelId]
+		return counts
+	}, {})
+	const roundedCounts = {}
+	let assignedPopulation = 0
+
+	incomeLevelIds.forEach((incomeLevelId, index) => {
+		if (index === incomeLevelIds.length - 1) {
+			roundedCounts[incomeLevelId] = Math.max(0, populationState.total - assignedPopulation)
+			return
+		}
+
+		const roundedCount = Math.max(0, Math.round(rawCounts[incomeLevelId]))
+		roundedCounts[incomeLevelId] = roundedCount
+		assignedPopulation += roundedCount
+	})
+
+	return roundedCounts
+}
+
 function normalizeSexShares(femaleShare){
 	const nextFemaleShare = clamp(femaleShare, 0.5 - FEMALE_SHARE_OSCILLATION_RANGE, 0.5 + FEMALE_SHARE_OSCILLATION_RANGE)
 	return {
 		female: nextFemaleShare,
 		male: 1 - nextFemaleShare
 	}
+}
+
+function normalizeActivityShares(workerShare){
+	const nextWorkerShare = clamp(workerShare, 0.6 - WORKER_SHARE_OSCILLATION_RANGE, 0.6 + WORKER_SHARE_OSCILLATION_RANGE)
+	return {
+		workers: nextWorkerShare,
+		nonWorkers: 1 - nextWorkerShare
+	}
+}
+
+function normalizeIncomeLevelShares(incomeLevelShares){
+	const incomeLevelIds = Object.keys(INCOME_LEVEL_GROUPS)
+	const sanitizedShares = incomeLevelIds.reduce((shares, incomeLevelId) => {
+		shares[incomeLevelId] = Math.max(0, Number(incomeLevelShares?.[incomeLevelId]) || 0)
+		return shares
+	}, {})
+	const totalShare = incomeLevelIds.reduce((sum, incomeLevelId) => sum + sanitizedShares[incomeLevelId], 0)
+
+	if (totalShare <= 0) {
+		return incomeLevelIds.reduce((shares, incomeLevelId) => {
+			shares[incomeLevelId] = INCOME_LEVEL_GROUPS[incomeLevelId]
+			return shares
+		}, {})
+	}
+
+	return incomeLevelIds.reduce((shares, incomeLevelId) => {
+		shares[incomeLevelId] = sanitizedShares[incomeLevelId] / totalShare
+		return shares
+	}, {})
 }
 
 function normalizeAgeShares(ageShares){
@@ -191,6 +287,56 @@ function resolveSavedFemaleShare(savedPopulation){
 	return 0.5
 }
 
+function resolveSavedWorkerShare(savedPopulation){
+	const savedWorkerShare = Number(savedPopulation?.demographics?.activity?.workers)
+
+	if (Number.isFinite(savedWorkerShare)) {
+		return savedWorkerShare
+	}
+
+	const savedWorkers = Number(savedPopulation?.activity?.workers)
+	const savedNonWorkers = Number(savedPopulation?.activity?.nonWorkers)
+	const totalWorkingAge = savedWorkers + savedNonWorkers
+
+	if (totalWorkingAge > 0 && Number.isFinite(savedWorkers)) {
+		return savedWorkers / totalWorkingAge
+	}
+
+	return 0.6
+}
+
+function buildIncomeLevelSharesFromCounts(savedPopulation){
+	const savedIncomeLevel = savedPopulation?.incomeLevel || {}
+	const totalPopulation = Number(savedPopulation?.total) || 0
+	const incomeLevelCounts = Object.keys(INCOME_LEVEL_GROUPS).reduce((counts, incomeLevelId) => {
+		counts[incomeLevelId] = Math.max(0, Number(savedIncomeLevel?.[incomeLevelId]) || 0)
+		return counts
+	}, {})
+	const totalFromCounts = Object.values(incomeLevelCounts).reduce((sum, value) => sum + value, 0)
+	const referenceTotal = totalPopulation > 0 ? totalPopulation : totalFromCounts
+
+	if (referenceTotal <= 0) {
+		return null
+	}
+
+	return normalizeIncomeLevelShares(
+		Object.entries(incomeLevelCounts).reduce((shares, [incomeLevelId, count]) => {
+			shares[incomeLevelId] = count / referenceTotal
+			return shares
+		}, {})
+	)
+}
+
+function resolveSavedIncomeLevelShares(savedPopulation){
+	const savedIncomeLevelShares = savedPopulation?.demographics?.incomeLevel
+
+	if (savedIncomeLevelShares && Object.keys(savedIncomeLevelShares).length > 0) {
+		return normalizeIncomeLevelShares(savedIncomeLevelShares)
+	}
+
+	return buildIncomeLevelSharesFromCounts(savedPopulation) || normalizeIncomeLevelShares()
+}
+
 function notifyPopulationListeners(){
 	const snapshot = buildPopulationSnapshot()
 	populationListeners.forEach((listener) => {
@@ -221,6 +367,11 @@ function stepSimulation(stepHours = 1){
 		populationState.trend.deathBalanceDelta - populationState.trend.deathBalanceDelta * 0.08 + (Math.random() - 0.5) * 0.03,
 		-EVENT_BALANCE_VARIATION,
 		EVENT_BALANCE_VARIATION
+	)
+	populationState.trend.workerShareDelta = clamp(
+		populationState.trend.workerShareDelta - populationState.trend.workerShareDelta * 0.18 + (Math.random() - 0.5) * 0.0025,
+		-0.015,
+		0.015
 	)
 	populationState.trend.femaleShareDelta = clamp(
 		populationState.trend.femaleShareDelta - femaleShareOffset * 0.22 + (Math.random() - 0.5) * 0.00022,
@@ -265,6 +416,11 @@ function stepSimulation(stepHours = 1){
 		INITIAL_SATISFACTION - SATISFACTION_OSCILLATION_RANGE,
 		INITIAL_SATISFACTION + SATISFACTION_OSCILLATION_RANGE
 	)
+	populationState.demographics.activity = normalizeActivityShares(
+		populationState.demographics.activity.workers +
+		populationState.trend.workerShareDelta +
+		((populationState.satisfaction - INITIAL_SATISFACTION) * 0.0006)
+	)
 	populationState.demographics.sex = normalizeSexShares(
 		populationState.demographics.sex.female + populationState.trend.femaleShareDelta
 	)
@@ -285,6 +441,8 @@ function resetPopulation(){
 	populationState.satisfaction = nextPopulation.satisfaction
 	populationState.demographics = {
 		age: { ...nextPopulation.demographics.age },
+		activity: { ...nextPopulation.demographics.activity },
+		incomeLevel: { ...nextPopulation.demographics.incomeLevel },
 		sex: { ...nextPopulation.demographics.sex }
 	}
 	populationState.trend = { ...nextPopulation.trend }
@@ -303,12 +461,15 @@ function restorePopulation(save){
 	populationState.satisfaction = clamp(Number(savedPopulation.satisfaction) || INITIAL_SATISFACTION, 0, 100)
 	populationState.demographics = {
 		age: resolveSavedAgeShares(savedPopulation),
+		activity: normalizeActivityShares(resolveSavedWorkerShare(savedPopulation)),
+		incomeLevel: resolveSavedIncomeLevelShares(savedPopulation),
 		sex: normalizeSexShares(resolveSavedFemaleShare(savedPopulation))
 	}
 	populationState.trend = {
 		satisfactionDelta: 0,
 		birthBalanceDelta: 0,
 		deathBalanceDelta: 0,
+		workerShareDelta: 0,
 		femaleShareDelta: 0
 	}
 	notifyPopulationListeners()
@@ -318,9 +479,11 @@ function restorePopulation(save){
 
 function buildPopulationSnapshot(){
 	const ageCounts = buildAgeCounts()
+	const activityCounts = buildActivityCounts()
+	const incomeLevelCounts = buildIncomeLevelCounts()
 	const sexCounts = buildSexCounts()
 	return {
-		version: 3,
+		version: 4,
 		total: populationState.total,
 		satisfaction: populationState.satisfaction,
 		demographics: {
@@ -329,6 +492,17 @@ function buildPopulationSnapshot(){
 				age18To34: populationState.demographics.age.age18To34,
 				age35To64: populationState.demographics.age.age35To64,
 				age65Plus: populationState.demographics.age.age65Plus
+			},
+			activity: {
+				workers: populationState.demographics.activity.workers,
+				nonWorkers: populationState.demographics.activity.nonWorkers
+			},
+			incomeLevel: {
+				veryPoor: populationState.demographics.incomeLevel.veryPoor,
+				poor: populationState.demographics.incomeLevel.poor,
+				middleIncome: populationState.demographics.incomeLevel.middleIncome,
+				comfortableIncome: populationState.demographics.incomeLevel.comfortableIncome,
+				highIncome: populationState.demographics.incomeLevel.highIncome
 			},
 			sex: {
 				female: populationState.demographics.sex.female,
@@ -340,6 +514,17 @@ function buildPopulationSnapshot(){
 			age18To34: ageCounts.age18To34,
 			age35To64: ageCounts.age35To64,
 			age65Plus: ageCounts.age65Plus
+		},
+		activity: {
+			workers: activityCounts.workers,
+			nonWorkers: activityCounts.nonWorkers
+		},
+		incomeLevel: {
+			veryPoor: incomeLevelCounts.veryPoor,
+			poor: incomeLevelCounts.poor,
+			middleIncome: incomeLevelCounts.middleIncome,
+			comfortableIncome: incomeLevelCounts.comfortableIncome,
+			highIncome: incomeLevelCounts.highIncome
 		},
 		sex: {
 			female: sexCounts.female,

@@ -41,6 +41,12 @@ const translations = {
 			population: 'Population mondiale',
 			satisfaction: 'Satisfaction'
 		},
+		satisfactionVote: {
+			title: 'Satisfaction',
+			question: 'Êtes-vous satisfait ?',
+			positive: 'Satisfait',
+			negative: 'Insatisfait'
+		},
 		chapter: {
 			title: 'Lorem Ipsum'
 		}
@@ -86,6 +92,12 @@ const translations = {
 			funds: 'Available funds',
 			population: 'World population',
 			satisfaction: 'Satisfaction'
+		},
+		satisfactionVote: {
+			title: 'Satisfaction',
+			question: 'Are you satisfied?',
+			positive: 'Satisfied',
+			negative: 'Dissatisfied'
 		},
 		chapter: {
 			title: 'Lorem Ipsum'

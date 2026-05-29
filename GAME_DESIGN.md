@@ -93,6 +93,13 @@ La direction visuelle générale repose sur une esthétique :
 
 L'univers passe avant tout par l'écran, les flux d'informations, les structures de contrôle et les traces d'un monde piloté à distance.
 
+À ce stade du prototype, cette direction commence déjà à prendre forme à travers :
+
+- des outils fenêtrés, déplaçables et réductibles
+- un temps simulé continu avec plusieurs vitesses
+- un affichage du monde encore minimal mais persistant
+- un dispositif de vote de satisfaction visible à l'écran sans interaction directe du joueur
+
 ## Expérience visée
 
 `Humanity Protocol` cherche à produire une expérience de stratégie, de lecture systémique, de choix politiques et de tension morale. Le joueur ne doit pas seulement administrer un monde : il doit construire sa propre définition du bien commun, puis assumer ce que cette définition exige.

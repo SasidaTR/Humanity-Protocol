@@ -50,6 +50,7 @@ function buildSimulationStepKey(date){
 
 function buildTimeSnapshot(previousDayKey = timeState.dayKey, previousSimulationStepKey = timeState.simulationStepKey){
 	const simulationStepsAdvanced = Math.max(0, timeState.simulationStepKey - previousSimulationStepKey)
+	const isSimulationPaused = !simulationRequested || speedMultiplier === 0
 
 	return {
 		version: 1,
@@ -60,7 +61,9 @@ function buildTimeSnapshot(previousDayKey = timeState.dayKey, previousSimulation
 		simulationStepHours,
 		didAdvanceSimulationStep: simulationStepsAdvanced > 0,
 		simulationStepsAdvanced,
-		speedMultiplier
+		speedMultiplier,
+		isSimulationPaused,
+		displaySpeedMultiplier: isSimulationPaused ? 0 : speedMultiplier
 	}
 }
 
@@ -112,11 +115,13 @@ function startSimulation(){
 	simulationRequested = true
 
 	if (animationFrameId || speedMultiplier === 0) {
+		notifyTimeListeners(timeState.dayKey, timeState.simulationStepKey)
 		return
 	}
 
 	lastFrameTimestamp = null
 	animationFrameId = requestAnimationFrame(runTimeLoop)
+	notifyTimeListeners(timeState.dayKey, timeState.simulationStepKey)
 }
 
 function stopSimulation(){
@@ -124,12 +129,14 @@ function stopSimulation(){
 
 	if (!animationFrameId) {
 		lastFrameTimestamp = null
+		notifyTimeListeners(timeState.dayKey, timeState.simulationStepKey)
 		return
 	}
 
 	cancelAnimationFrame(animationFrameId)
 	animationFrameId = null
 	lastFrameTimestamp = null
+	notifyTimeListeners(timeState.dayKey, timeState.simulationStepKey)
 }
 
 function setSimulationStepHours(nextStepHours){
@@ -166,6 +173,7 @@ function setSpeedMultiplier(nextMultiplier){
 			animationFrameId = null
 		}
 		lastFrameTimestamp = null
+		notifyTimeListeners(timeState.dayKey, timeState.simulationStepKey)
 		return speedMultiplier
 	}
 
@@ -178,6 +186,7 @@ function setSpeedMultiplier(nextMultiplier){
 		animationFrameId = requestAnimationFrame(runTimeLoop)
 	}
 
+	notifyTimeListeners(timeState.dayKey, timeState.simulationStepKey)
 	return speedMultiplier
 }
 

@@ -205,12 +205,13 @@ async function loadSettings(){
 	return settings
 }
 
-async function startIntro(){
+async function startNewGame(){
 	window.humanityProtocolDebug.resetDebugState()
 	const settings = await loadSettings()
 	window.humanityProtocolSession.startNewRun()
-	window.humanityProtocolIntro.startIntro(settings.language)
-	showScreen('intro')
+	showScreen('game')
+	window.humanityProtocolTools.renderTools({ language: settings.language })
+	window.humanityProtocolSession.saveCurrentRun()
 }
 
 async function loadSave(save){
@@ -291,7 +292,7 @@ async function initialize(){
 initialize()
 
 newGameButton.addEventListener('click', () => {
-	startIntro()
+	startNewGame()
 })
 
 continueButton.addEventListener('click', () => {
@@ -447,6 +448,20 @@ document.addEventListener('keydown', (event) => {
 
 	if (requestedSpeed !== undefined) {
 		window.humanityProtocolTime.setSpeedMultiplier(requestedSpeed)
+
+		if (
+			gameState.currentScreen === 'menu' &&
+			window.humanityProtocolSession.hasActiveRun() &&
+			window.humanityProtocolSession.getLastNonMenuScreen()
+		) {
+			const lastNonMenuScreen = window.humanityProtocolSession.getLastNonMenuScreen()
+			showScreen(lastNonMenuScreen)
+
+			if (lastNonMenuScreen === 'intro') {
+				window.humanityProtocolIntro.resumeIntroIfNeeded()
+			}
+		}
+
 		return
 	}
 

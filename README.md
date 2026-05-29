@@ -33,8 +33,11 @@ Le dépôt contient actuellement un prototype Electron simple avec une structure
 
 Le prototype contient déjà une base de simulation et d'interface pour :
 
-- un sondage de satisfaction non visuel
-- un panneau d'état mondial
+- un panneau d'état mondial fenêtré et déplaçable
+- un outil visuel de vote de satisfaction
+- un sondage de satisfaction calculé par cohortes adultes
+- une simulation temporelle continue avec vitesses `pause`, `x1`, `x2`, `x4`
+- un système de debug permettant d'activer des outils et leurs évolutions en cours de partie
 
 Les règles de temps et d'évolution du monde restent en cours d'itération. Le code du prototype ne doit donc pas être considéré comme la version définitive du comportement de simulation.
 
