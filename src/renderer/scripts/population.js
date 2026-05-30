@@ -1,6 +1,5 @@
 const INITIAL_WORLD_POPULATION = 8_000_000_000
 const INITIAL_SATISFACTION = 60
-const SATISFACTION_OSCILLATION_RANGE = 6
 const FEMALE_SHARE_OSCILLATION_RANGE = 0.008
 const WORKER_SHARE_OSCILLATION_RANGE = 0.08
 const HOURS_PER_YEAR = 365.25 * 24
@@ -346,17 +345,26 @@ function notifyPopulationListeners(){
 
 function stepSimulation(stepHours = 1){
 	const normalizedStepHours = Math.max(0, Number(stepHours) || 0)
-	const satisfactionOffset = populationState.satisfaction - INITIAL_SATISFACTION
 	const femaleShareOffset = populationState.demographics.sex.female - 0.5
 	const ageCounts = buildAgeCounts()
 	const childOutflow = ageCounts.age0To17 * normalizedStepHours / (AGE_GROUPS.age0To17.durationYears * HOURS_PER_YEAR)
 	const youngAdultOutflow = ageCounts.age18To34 * normalizedStepHours / (AGE_GROUPS.age18To34.durationYears * HOURS_PER_YEAR)
 	const matureAdultOutflow = ageCounts.age35To64 * normalizedStepHours / (AGE_GROUPS.age35To64.durationYears * HOURS_PER_YEAR)
 
+	const lowSatisfactionRecovery = populationState.satisfaction < 18
+		? ((18 - populationState.satisfaction) * 0.05)
+		: 0
+	const highSatisfactionCooling = populationState.satisfaction > 82
+		? ((populationState.satisfaction - 82) * 0.05)
+		: 0
+
 	populationState.trend.satisfactionDelta = clamp(
-		populationState.trend.satisfactionDelta - satisfactionOffset * 0.18 + (Math.random() - 0.5) * 1.2,
-		-1.8,
-		1.8
+		(populationState.trend.satisfactionDelta * 0.92) +
+		lowSatisfactionRecovery -
+		highSatisfactionCooling +
+		((Math.random() - 0.5) * 1.35),
+		-2.4,
+		2.4
 	)
 	populationState.trend.birthBalanceDelta = clamp(
 		populationState.trend.birthBalanceDelta - populationState.trend.birthBalanceDelta * 0.08 + (Math.random() - 0.5) * 0.03,
@@ -413,8 +421,8 @@ function stepSimulation(stepHours = 1){
 	populationState.total = nextTotalPopulation
 	populationState.satisfaction = clamp(
 		Math.round((populationState.satisfaction + populationState.trend.satisfactionDelta) * 10) / 10,
-		INITIAL_SATISFACTION - SATISFACTION_OSCILLATION_RANGE,
-		INITIAL_SATISFACTION + SATISFACTION_OSCILLATION_RANGE
+		0,
+		100
 	)
 	populationState.demographics.activity = normalizeActivityShares(
 		populationState.demographics.activity.workers +
