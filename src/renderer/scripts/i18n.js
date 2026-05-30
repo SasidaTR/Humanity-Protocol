@@ -43,9 +43,15 @@ const translations = {
 		},
 		satisfactionVote: {
 			title: 'Satisfaction',
+			eyebrow: 'Consultation citoyenne',
+			meta: 'Expression libre et anonyme',
+			notice: 'Votre réponse contribue au suivi de la qualité de vie collective.',
 			question: 'Êtes-vous satisfait ?',
 			positive: 'Satisfait',
-			negative: 'Insatisfait'
+			positiveHelper: 'Ma situation me convient actuellement.',
+			negative: 'Insatisfait',
+			negativeHelper: 'Ma situation devrait être améliorée.',
+			footnote: 'Une seule réponse est prise en compte pendant la période de consultation.'
 		},
 		chapter: {
 			title: 'Lorem Ipsum'
@@ -95,9 +101,15 @@ const translations = {
 		},
 		satisfactionVote: {
 			title: 'Satisfaction',
+			eyebrow: 'Public consultation',
+			meta: 'Free and anonymous response',
+			notice: 'Your answer contributes to the monitoring of collective quality of life.',
 			question: 'Are you satisfied?',
 			positive: 'Satisfied',
-			negative: 'Dissatisfied'
+			positiveHelper: 'My current situation is acceptable.',
+			negative: 'Dissatisfied',
+			negativeHelper: 'My current situation should be improved.',
+			footnote: 'Only one response is counted during the consultation period.'
 		},
 		chapter: {
 			title: 'Lorem Ipsum'

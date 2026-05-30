@@ -6,6 +6,8 @@ let dragPointerId = null
 let dragOffsetX = 0
 let dragOffsetY = 0
 let nextToolLayer = 1
+const DEFAULT_TOOL_OFFSET_X = 28
+const DEFAULT_TOOL_OFFSET_Y = 24
 
 function getNow(){
 	return Date.now()
@@ -92,6 +94,22 @@ function getDefaultToolPosition(index = toolRegistry.size){
 	}
 }
 
+function getSpawnToolPosition(tool){
+	const basePosition = getDefaultToolPosition()
+	const untouchedVisibleTools = [...toolRegistry.values()].filter((currentTool) => (
+		currentTool.id !== tool.id &&
+		currentTool.enabled &&
+		!currentTool.hasBeenMoved &&
+		currentTool.shell?.isConnected
+	))
+	const spawnIndex = untouchedVisibleTools.length
+
+	return {
+		x: basePosition.x + (spawnIndex * DEFAULT_TOOL_OFFSET_X),
+		y: basePosition.y + (spawnIndex * DEFAULT_TOOL_OFFSET_Y)
+	}
+}
+
 function bringToolToFront(tool){
 	tool.layer = nextToolLayer
 	nextToolLayer += 1
@@ -163,6 +181,7 @@ function handlePointerMove(event){
 
 	tool.position.x = Math.max(12, Math.min(maxX, event.clientX - dragOffsetX))
 	tool.position.y = Math.max(12, Math.min(maxY, event.clientY - dragOffsetY))
+	tool.hasBeenMoved = true
 	applyToolPosition(tool)
 }
 
@@ -270,6 +289,7 @@ function registerTool(definition){
 		},
 		title: definition.title || definition.debugLabel || definition.id,
 		position: getDefaultToolPosition(index),
+		hasBeenMoved: false,
 		collapsed: false,
 		layer: 0,
 		shell: null,
@@ -302,6 +322,9 @@ function enableTool(toolId){
 	}
 
 	tool.enabled = true
+	if (!tool.hasBeenMoved) {
+		tool.position = getSpawnToolPosition(tool)
+	}
 	startToolUsage(tool)
 	ensureToolShell(tool)
 	tool.onEnable?.({
@@ -364,6 +387,7 @@ function buildLayoutSnapshot(){
 				},
 				collapsed: Boolean(tool.collapsed),
 				layer: Math.max(0, Math.round(Number(tool.layer) || 0)),
+				hasBeenMoved: Boolean(tool.hasBeenMoved),
 				usage: {
 					activationCount: Math.max(0, Math.round(Number(tool.usage?.activationCount) || 0)),
 					pointerDownCount: Math.max(0, Math.round(Number(tool.usage?.pointerDownCount) || 0)),
@@ -394,6 +418,7 @@ function restoreLayout(layoutSnapshot){
 		}
 		tool.collapsed = Boolean(savedTool.collapsed)
 		tool.layer = Math.max(0, Math.round(Number(savedTool.layer) || 0))
+		tool.hasBeenMoved = Boolean(savedTool.hasBeenMoved)
 		tool.usage = {
 			activationCount: Math.max(0, Math.round(Number(savedTool.usage?.activationCount) || 0)),
 			pointerDownCount: Math.max(0, Math.round(Number(savedTool.usage?.pointerDownCount) || 0)),
@@ -421,6 +446,7 @@ function centerToolLayout(){
 	toolRegistry.forEach((tool) => {
 		tool.usage.lastCollapsedAt = null
 		tool.position = getDefaultToolPosition()
+		tool.hasBeenMoved = false
 		tool.collapsed = false
 		tool.layer = 0
 		updateCollapsedState(tool)

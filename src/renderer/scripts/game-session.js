@@ -42,8 +42,8 @@ function setToolAvailability(toolId, isEnabled){
 
 function syncToolAvailability(){
 	const isWorldStatusAvailable = sessionState.hasActiveRun && sessionState.lastNonMenuScreen !== 'intro'
-	setToolAvailability('world-status', isWorldStatusAvailable)
 	setToolAvailability('satisfaction-vote', isWorldStatusAvailable)
+	setToolAvailability('world-status', isWorldStatusAvailable)
 }
 
 function syncSimulationWithScreen(screenName){

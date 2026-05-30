@@ -9,7 +9,7 @@ const SATISFACTION_RATE_RANGE = {
 	max: 0.92
 }
 const VOTE_WINDOW_HOURS = 24
-const REFRESH_WINDOW_HOURS = {
+const COHORT_VOTE_INTERVAL_HOURS = {
 	min: 24,
 	max: 72
 }
@@ -90,8 +90,16 @@ function roundPercentage(value){
 	return Math.round(value * 10) / 10
 }
 
-function getRandomRefreshHours(){
-	return REFRESH_WINDOW_HOURS.min + (Math.random() * (REFRESH_WINDOW_HOURS.max - REFRESH_WINDOW_HOURS.min))
+function getSatisfactionVarianceFactor(rate){
+	const clampedRate = clamp(rate, 0, 1)
+	return 4 * clampedRate * (1 - clampedRate)
+}
+
+function getRandomCohortVoteHours(){
+	const randomValue = Math.random()
+	const weightedValue = randomValue * randomValue
+
+	return COHORT_VOTE_INTERVAL_HOURS.min + (weightedValue * (COHORT_VOTE_INTERVAL_HOURS.max - COHORT_VOTE_INTERVAL_HOURS.min))
 }
 
 function getPopulationIncomeShares(populationSnapshot){
@@ -203,6 +211,11 @@ function buildCohortTarget(cohort, baselineSatisfaction){
 	}
 }
 
+function getCohortSatisfactionNoise(targetRate){
+	const varianceFactor = getSatisfactionVarianceFactor(targetRate)
+	return OPINION_NOISE.satisfactionRate * (0.18 + (varianceFactor * 0.82))
+}
+
 function createCohortState(target){
 	return {
 		turnoutRate: clamp(
@@ -211,11 +224,11 @@ function createCohortState(target){
 			TURNOUT_RATE_RANGE.max
 		),
 		satisfactionRate: clamp(
-			target.satisfactionRate + ((Math.random() - 0.5) * OPINION_NOISE.satisfactionRate),
+			target.satisfactionRate + ((Math.random() - 0.5) * getCohortSatisfactionNoise(target.satisfactionRate)),
 			SATISFACTION_RATE_RANGE.min,
 			SATISFACTION_RATE_RANGE.max
 		),
-		hoursUntilRefresh: getRandomRefreshHours()
+		hoursUntilRefresh: getRandomCohortVoteHours()
 	}
 }
 
@@ -237,11 +250,11 @@ function advanceCohortState(cohortState, target, elapsedHours){
 		cohortState.satisfactionRate = clamp(
 			(cohortState.satisfactionRate * 0.35) +
 			(target.satisfactionRate * 0.65) +
-			((Math.random() - 0.5) * OPINION_NOISE.satisfactionRate),
+			((Math.random() - 0.5) * getCohortSatisfactionNoise(target.satisfactionRate)),
 			SATISFACTION_RATE_RANGE.min,
 			SATISFACTION_RATE_RANGE.max
 		)
-		hoursUntilRefresh += getRandomRefreshHours()
+		hoursUntilRefresh += getRandomCohortVoteHours()
 	}
 
 	cohortState.hoursUntilRefresh = hoursUntilRefresh
@@ -364,7 +377,7 @@ function restoreSurvey(save){
 		cohorts[cohortId] = {
 			turnoutRate: clamp(Number(cohortState?.turnoutRate) || INITIAL_TURNOUT_RATE, TURNOUT_RATE_RANGE.min, TURNOUT_RATE_RANGE.max),
 			satisfactionRate: clamp(Number(cohortState?.satisfactionRate) || (INITIAL_WORLD_SATISFACTION / 100), SATISFACTION_RATE_RANGE.min, SATISFACTION_RATE_RANGE.max),
-			hoursUntilRefresh: Math.max(0, Number(cohortState?.hoursUntilRefresh) || getRandomRefreshHours())
+			hoursUntilRefresh: Math.max(0, Number(cohortState?.hoursUntilRefresh) || getRandomCohortVoteHours())
 		}
 		return cohorts
 	}, {})
