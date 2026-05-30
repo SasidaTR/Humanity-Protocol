@@ -147,41 +147,46 @@ function configureSession(nextDependencies = {}){
 	Object.assign(sessionDependencies, nextDependencies)
 }
 
-function initializeSession(){
+function resetRunSystems(){
 	window.humanityProtocolTime.resetTime()
 	window.humanityProtocolPopulation.resetPopulation()
 	window.humanityProtocolSatisfactionSurvey.resetSurvey()
 	window.humanityProtocolFunds.resetFunds()
-	window.humanityProtocolSatisfactionVoteTool.restoreSnapshot()
+	window.humanityProtocolSatisfactionVoteTool.resetState()
+}
+
+function resetRunState({ resetTools = false, clearSaveId = false } = {}){
+	sessionState.hasActiveRun = false
+	sessionState.lastNonMenuScreen = null
+
+	if (clearSaveId) {
+		sessionState.currentSaveId = null
+	}
+
 	window.humanityProtocolTime.stopSimulation()
 	stopAutosave()
 	syncToolAvailability()
+
+	if (resetTools) {
+		window.humanityProtocolTools.resetToolRuntime()
+	}
+
+	resetRunSystems()
+}
+
+function initializeSession(){
+	resetRunState({ resetTools: true, clearSaveId: true })
 }
 
 function clearCurrentRun(){
-	sessionState.currentSaveId = null
-	sessionState.hasActiveRun = false
-	sessionState.lastNonMenuScreen = null
-	window.humanityProtocolTime.resetTime()
-	window.humanityProtocolSatisfactionSurvey.resetSurvey()
-	window.humanityProtocolFunds.resetFunds()
-	window.humanityProtocolPopulation.resetPopulation()
-	window.humanityProtocolSatisfactionVoteTool.restoreSnapshot()
-	window.humanityProtocolTime.stopSimulation()
-	stopAutosave()
-	syncToolAvailability()
+	resetRunState({ resetTools: true, clearSaveId: true })
 }
 
 function startNewRun(){
+	resetRunState({ resetTools: true, clearSaveId: true })
 	sessionState.currentSaveId = `save-${Date.now()}`
 	sessionState.hasActiveRun = true
 	sessionState.lastNonMenuScreen = null
-	window.humanityProtocolTools.centerToolLayout()
-	window.humanityProtocolTime.resetTime()
-	window.humanityProtocolPopulation.resetPopulation()
-	window.humanityProtocolSatisfactionSurvey.resetSurvey()
-	window.humanityProtocolFunds.resetFunds()
-	window.humanityProtocolSatisfactionVoteTool.restoreSnapshot()
 	syncToolAvailability()
 }
 

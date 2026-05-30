@@ -19,8 +19,31 @@
 	let negativeVoteButton = null
 	let hoveredVoteType = null
 
-	function isAiVoteAvailable(){
-		return isAiVoteUnlocked || window.humanityProtocolDebug.isToolEvolutionEnabled('satisfaction-vote', 'ai-vote')
+	function syncDebugAiVoteEvolution(){
+		if (!window.humanityProtocolDebug) {
+			return
+		}
+
+		const debugState = window.humanityProtocolDebug.getState()
+		const activeEvolutions = new Set(debugState.toolEvolutions['satisfaction-vote'] || [])
+		const isDebugChecked = activeEvolutions.has('ai-vote')
+
+		if (isDebugChecked === isAiVoteUnlocked) {
+			return
+		}
+
+		if (isAiVoteUnlocked) {
+			activeEvolutions.add('ai-vote')
+		} else {
+			activeEvolutions.delete('ai-vote')
+		}
+
+		window.humanityProtocolDebug.updateDebugState({
+			toolEvolutions: {
+				...debugState.toolEvolutions,
+				'satisfaction-vote': [...activeEvolutions]
+			}
+		})
 	}
 
 	function getCurrentSimulationTimestamp(){
@@ -28,7 +51,24 @@
 	}
 
 	function isVoteLocked(){
-		return isAiVoteAvailable() && Number.isFinite(voteLockedUntil) && getCurrentSimulationTimestamp() < voteLockedUntil
+		return isAiVoteUnlocked && Number.isFinite(voteLockedUntil) && getCurrentSimulationTimestamp() < voteLockedUntil
+	}
+
+	function setAiVoteUnlocked(nextIsUnlocked, { syncDebug = true } = {}){
+		isAiVoteUnlocked = Boolean(nextIsUnlocked)
+
+		if (!isAiVoteUnlocked) {
+			selectedVote = null
+			voteLockedUntil = null
+			unlockSide = null
+			unlockProgress = 0
+		}
+
+		if (syncDebug) {
+			syncDebugAiVoteEvolution()
+		}
+
+		updateVoteSelection()
 	}
 
 	function updateVoteSelection(){
@@ -37,16 +77,15 @@
 		}
 
 		const voteLocked = isVoteLocked()
-		const aiVoteAvailable = isAiVoteAvailable()
-		const isInteractive = aiVoteAvailable && !voteLocked
-		const hasVisibleSelection = voteLocked && aiVoteAvailable && selectedVote
+		const isInteractive = isAiVoteUnlocked && !voteLocked
+		const hasVisibleSelection = voteLocked && isAiVoteUnlocked && selectedVote
 		const keepPositiveHover = voteLocked && hoveredVoteType === 'positive'
 		const keepNegativeHover = voteLocked && hoveredVoteType === 'negative'
 
 		positiveVoteButton.classList.toggle('is-selected', hasVisibleSelection && selectedVote === 'positive')
 		negativeVoteButton.classList.toggle('is-selected', hasVisibleSelection && selectedVote === 'negative')
-		positiveVoteButton.classList.toggle('is-unlocked', aiVoteAvailable)
-		negativeVoteButton.classList.toggle('is-unlocked', aiVoteAvailable)
+		positiveVoteButton.classList.toggle('is-unlocked', isAiVoteUnlocked)
+		negativeVoteButton.classList.toggle('is-unlocked', isAiVoteUnlocked)
 		positiveVoteButton.classList.toggle('is-interactive', isInteractive)
 		negativeVoteButton.classList.toggle('is-interactive', isInteractive)
 		positiveVoteButton.classList.toggle('is-hover-retained', keepPositiveHover)
@@ -67,7 +106,7 @@
 			return
 		}
 
-		if (!isAiVoteAvailable()) {
+		if (!isAiVoteUnlocked) {
 			if (unlockSide === voteType) {
 				unlockProgress = Math.min(3, unlockProgress + 1)
 			} else {
@@ -76,8 +115,7 @@
 			}
 
 			if (unlockProgress >= 3) {
-				isAiVoteUnlocked = true
-				selectedVote = null
+				setAiVoteUnlocked(true)
 				window.humanityProtocolTools.recordToolMetric('satisfaction-vote', 'aiVoteUnlockCount')
 			}
 		} else {
@@ -85,8 +123,6 @@
 			voteLockedUntil = getCurrentSimulationTimestamp() + VOTE_LOCK_MS
 			window.humanityProtocolTools.recordToolMetric('satisfaction-vote', 'castVoteCount')
 		}
-
-		updateVoteSelection()
 		updateVoteStatus()
 	}
 
@@ -208,6 +244,13 @@
 		}
 	}
 
+	function resetSatisfactionVoteState(){
+		hoveredVoteType = null
+		setAiVoteUnlocked(false)
+		updateVoteStatus()
+		return buildSatisfactionVoteSnapshot()
+	}
+
 	function restoreSatisfactionVoteSnapshot(save){
 		const snapshot = save?.ui?.satisfactionVote
 
@@ -224,6 +267,7 @@
 			isAiVoteUnlocked = true
 		}
 
+		syncDebugAiVoteEvolution()
 		updateVoteSelection()
 		updateVoteStatus()
 	}
@@ -304,7 +348,10 @@
 
 	window.humanityProtocolSatisfactionVoteTool = {
 		buildSnapshot: buildSatisfactionVoteSnapshot,
-		restoreSnapshot: restoreSatisfactionVoteSnapshot
+		resetState: resetSatisfactionVoteState,
+		restoreSnapshot: restoreSatisfactionVoteSnapshot,
+		isAiVoteUnlocked: () => isAiVoteUnlocked,
+		setAiVoteUnlocked
 	}
 
 	window.humanityProtocolTime.subscribe(() => {
@@ -316,10 +363,14 @@
 	})
 
 	window.humanityProtocolDebug.subscribe(() => {
-		if (!window.humanityProtocolTools.isToolEnabled('satisfaction-vote')) {
-			return
+		const shouldUnlockAiVote = window.humanityProtocolDebug.isToolEvolutionEnabled('satisfaction-vote', 'ai-vote')
+
+		if (shouldUnlockAiVote !== isAiVoteUnlocked) {
+			setAiVoteUnlocked(shouldUnlockAiVote, { syncDebug: false })
 		}
 
-		updateVoteSelection()
+		if (window.humanityProtocolTools.isToolEnabled('satisfaction-vote')) {
+			updateVoteSelection()
+		}
 	})
 })()

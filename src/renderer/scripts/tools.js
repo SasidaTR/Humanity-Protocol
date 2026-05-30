@@ -6,8 +6,13 @@ let dragPointerId = null
 let dragOffsetX = 0
 let dragOffsetY = 0
 let nextToolLayer = 1
+let nextAutoSpawnSlot = 0
 const DEFAULT_TOOL_OFFSET_X = 28
 const DEFAULT_TOOL_OFFSET_Y = 24
+const TOOL_POSITION_MODES = {
+	AUTO: 'auto',
+	FIXED: 'fixed'
+}
 
 function getNow(){
 	return Date.now()
@@ -94,19 +99,12 @@ function getDefaultToolPosition(index = toolRegistry.size){
 	}
 }
 
-function getSpawnToolPosition(tool){
+function getSpawnToolPosition(spawnSlot = 0){
 	const basePosition = getDefaultToolPosition()
-	const untouchedVisibleTools = [...toolRegistry.values()].filter((currentTool) => (
-		currentTool.id !== tool.id &&
-		currentTool.enabled &&
-		!currentTool.hasBeenMoved &&
-		currentTool.shell?.isConnected
-	))
-	const spawnIndex = untouchedVisibleTools.length
 
 	return {
-		x: basePosition.x + (spawnIndex * DEFAULT_TOOL_OFFSET_X),
-		y: basePosition.y + (spawnIndex * DEFAULT_TOOL_OFFSET_Y)
+		x: basePosition.x + (spawnSlot * DEFAULT_TOOL_OFFSET_X),
+		y: basePosition.y + (spawnSlot * DEFAULT_TOOL_OFFSET_Y)
 	}
 }
 
@@ -181,7 +179,8 @@ function handlePointerMove(event){
 
 	tool.position.x = Math.max(12, Math.min(maxX, event.clientX - dragOffsetX))
 	tool.position.y = Math.max(12, Math.min(maxY, event.clientY - dragOffsetY))
-	tool.hasBeenMoved = true
+	tool.positionMode = TOOL_POSITION_MODES.FIXED
+	tool.autoSpawnSlot = null
 	applyToolPosition(tool)
 }
 
@@ -261,6 +260,7 @@ function ensureToolShell(tool){
 	}
 
 	if (!tool.shell.isConnected) {
+		bringToolToFront(tool)
 		toolsPanel.append(tool.shell)
 	}
 
@@ -289,7 +289,8 @@ function registerTool(definition){
 		},
 		title: definition.title || definition.debugLabel || definition.id,
 		position: getDefaultToolPosition(index),
-		hasBeenMoved: false,
+		positionMode: TOOL_POSITION_MODES.AUTO,
+		autoSpawnSlot: null,
 		collapsed: false,
 		layer: 0,
 		shell: null,
@@ -322,8 +323,12 @@ function enableTool(toolId){
 	}
 
 	tool.enabled = true
-	if (!tool.hasBeenMoved) {
-		tool.position = getSpawnToolPosition(tool)
+	if (tool.positionMode === TOOL_POSITION_MODES.AUTO) {
+		if (!Number.isInteger(tool.autoSpawnSlot) || tool.autoSpawnSlot < 0) {
+			tool.autoSpawnSlot = nextAutoSpawnSlot
+			nextAutoSpawnSlot += 1
+		}
+		tool.position = getSpawnToolPosition(tool.autoSpawnSlot)
 	}
 	startToolUsage(tool)
 	ensureToolShell(tool)
@@ -387,7 +392,9 @@ function buildLayoutSnapshot(){
 				},
 				collapsed: Boolean(tool.collapsed),
 				layer: Math.max(0, Math.round(Number(tool.layer) || 0)),
-				hasBeenMoved: Boolean(tool.hasBeenMoved),
+				positionMode: tool.positionMode === TOOL_POSITION_MODES.FIXED
+					? TOOL_POSITION_MODES.FIXED
+					: TOOL_POSITION_MODES.AUTO,
 				usage: {
 					activationCount: Math.max(0, Math.round(Number(tool.usage?.activationCount) || 0)),
 					pointerDownCount: Math.max(0, Math.round(Number(tool.usage?.pointerDownCount) || 0)),
@@ -404,6 +411,7 @@ function buildLayoutSnapshot(){
 function restoreLayout(layoutSnapshot){
 	const savedTools = layoutSnapshot?.tools || {}
 	let highestLayer = 0
+	let restoredToolCount = 0
 
 	toolRegistry.forEach((tool) => {
 		const savedTool = savedTools[tool.id]
@@ -418,7 +426,8 @@ function restoreLayout(layoutSnapshot){
 		}
 		tool.collapsed = Boolean(savedTool.collapsed)
 		tool.layer = Math.max(0, Math.round(Number(savedTool.layer) || 0))
-		tool.hasBeenMoved = Boolean(savedTool.hasBeenMoved)
+		tool.positionMode = TOOL_POSITION_MODES.FIXED
+		tool.autoSpawnSlot = null
 		tool.usage = {
 			activationCount: Math.max(0, Math.round(Number(savedTool.usage?.activationCount) || 0)),
 			pointerDownCount: Math.max(0, Math.round(Number(savedTool.usage?.pointerDownCount) || 0)),
@@ -429,6 +438,7 @@ function restoreLayout(layoutSnapshot){
 			lastCollapsedAt: tool.enabled && tool.collapsed ? getNow() : null
 		}
 		highestLayer = Math.max(highestLayer, tool.layer)
+		restoredToolCount += 1
 		updateCollapsedState(tool)
 		applyToolPosition(tool)
 
@@ -438,19 +448,47 @@ function restoreLayout(layoutSnapshot){
 	})
 
 	nextToolLayer = Math.max(1, highestLayer + 1)
+	nextAutoSpawnSlot = restoredToolCount
 }
 
 function centerToolLayout(){
 	nextToolLayer = 1
+	nextAutoSpawnSlot = 0
 
 	toolRegistry.forEach((tool) => {
 		tool.usage.lastCollapsedAt = null
 		tool.position = getDefaultToolPosition()
-		tool.hasBeenMoved = false
+		tool.positionMode = TOOL_POSITION_MODES.AUTO
+		tool.autoSpawnSlot = null
 		tool.collapsed = false
 		tool.layer = 0
+		if (tool.shell) {
+			tool.shell.style.zIndex = '0'
+		}
 		updateCollapsedState(tool)
 		applyToolPosition(tool)
+	})
+}
+
+function resetToolRuntime(){
+	nextToolLayer = 1
+	nextAutoSpawnSlot = 0
+
+	toolRegistry.forEach((tool) => {
+		if (tool.shell?.isConnected) {
+			tool.shell.remove()
+		}
+
+		tool.position = getDefaultToolPosition()
+		tool.positionMode = TOOL_POSITION_MODES.AUTO
+		tool.autoSpawnSlot = null
+		tool.collapsed = false
+		tool.layer = 0
+		tool.shell = null
+		tool.header = null
+		tool.titleElement = null
+		tool.body = null
+		tool.collapseButton = null
 	})
 }
 
@@ -491,6 +529,7 @@ window.humanityProtocolTools = {
 	getRegisteredTools,
 	isToolEnabled,
 	centerToolLayout,
+	resetToolRuntime,
 	recordToolMetric,
 	registerTool,
 	restoreLayout,
