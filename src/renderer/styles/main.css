@@ -159,6 +159,14 @@ select {
 	padding: 0.35rem 0.5rem;
 }
 
+button:focus,
+button:focus-visible,
+select:focus,
+select:focus-visible {
+	outline: none;
+	box-shadow: none;
+}
+
 #tools-panel {
 	position: fixed;
 	inset: 0;
@@ -272,18 +280,41 @@ select {
 	cursor: default;
 }
 
-.satisfaction-vote-button:disabled {
-	opacity: 1;
+.satisfaction-vote-button:not(.is-interactive):hover {
+	transform: none;
+	border-color: color-mix(in srgb, var(--color-text) 20%, transparent);
+	box-shadow: none;
 }
 
-.satisfaction-vote-button:not(:disabled):hover {
+.satisfaction-vote-button.is-interactive {
+	cursor: pointer;
+}
+
+.satisfaction-vote-button.is-interactive:hover {
 	transform: translateY(-1px);
 	border-color: color-mix(in srgb, var(--color-text) 45%, transparent);
+	box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-text) 18%, transparent);
+}
+
+.satisfaction-vote-button.is-hover-retained {
+	transform: translateY(-1px);
+	border-color: color-mix(in srgb, var(--color-text) 45%, transparent);
+	box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-text) 18%, transparent);
 }
 
 .satisfaction-vote-button.is-selected {
 	box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-text) 35%, transparent), 0 0 18px color-mix(in srgb, var(--color-text) 12%, transparent);
 	border-color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+
+.satisfaction-vote-button.is-selected.is-interactive:hover {
+	border-color: color-mix(in srgb, var(--color-text) 70%, transparent);
+	box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-text) 28%, transparent), 0 0 22px color-mix(in srgb, var(--color-text) 15%, transparent);
+}
+
+.satisfaction-vote-button.is-selected.is-hover-retained {
+	border-color: color-mix(in srgb, var(--color-text) 70%, transparent);
+	box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-text) 28%, transparent), 0 0 22px color-mix(in srgb, var(--color-text) 15%, transparent);
 }
 
 .satisfaction-vote-face {

@@ -7,6 +7,75 @@ let dragOffsetX = 0
 let dragOffsetY = 0
 let nextToolLayer = 1
 
+function getNow(){
+	return Date.now()
+}
+
+function ensureToolUsage(tool){
+	if (!tool.usage) {
+		tool.usage = {
+			activationCount: 0,
+			pointerDownCount: 0,
+			totalEnabledMs: 0,
+			totalCollapsedMs: 0,
+			customMetrics: {},
+			lastEnabledAt: null,
+			lastCollapsedAt: null
+		}
+	}
+
+	return tool.usage
+}
+
+function flushToolUsage(tool, now = getNow()){
+	const usage = ensureToolUsage(tool)
+
+	if (tool.enabled && Number.isFinite(usage.lastEnabledAt)) {
+		usage.totalEnabledMs += Math.max(0, now - usage.lastEnabledAt)
+		usage.lastEnabledAt = now
+	}
+
+	if (tool.enabled && tool.collapsed && Number.isFinite(usage.lastCollapsedAt)) {
+		usage.totalCollapsedMs += Math.max(0, now - usage.lastCollapsedAt)
+		usage.lastCollapsedAt = now
+	}
+}
+
+function startToolUsage(tool, now = getNow()){
+	const usage = ensureToolUsage(tool)
+	usage.activationCount += 1
+	usage.lastEnabledAt = now
+	usage.lastCollapsedAt = tool.collapsed ? now : null
+}
+
+function stopToolUsage(tool, now = getNow()){
+	const usage = ensureToolUsage(tool)
+	flushToolUsage(tool, now)
+	usage.lastEnabledAt = null
+	usage.lastCollapsedAt = null
+}
+
+function updateCollapsedUsage(tool, now = getNow()){
+	const usage = ensureToolUsage(tool)
+
+	if (!tool.enabled) {
+		usage.lastCollapsedAt = null
+		return
+	}
+
+	if (tool.collapsed) {
+		if (!Number.isFinite(usage.lastCollapsedAt)) {
+			usage.lastCollapsedAt = now
+		}
+		return
+	}
+
+	if (Number.isFinite(usage.lastCollapsedAt)) {
+		usage.totalCollapsedMs += Math.max(0, now - usage.lastCollapsedAt)
+		usage.lastCollapsedAt = null
+	}
+}
+
 function getToolsContainer(){
 	return toolsPanel
 }
@@ -46,6 +115,7 @@ function updateCollapsedState(tool){
 		return
 	}
 
+	updateCollapsedUsage(tool)
 	tool.shell.classList.toggle('is-collapsed', tool.collapsed)
 	tool.body.hidden = tool.collapsed
 	tool.collapseButton.textContent = tool.collapsed ? '+' : '-'
@@ -155,6 +225,8 @@ function ensureToolShell(tool){
 		})
 
 		shell.addEventListener('pointerdown', () => {
+			const usage = ensureToolUsage(tool)
+			usage.pointerDownCount += 1
 			bringToolToFront(tool)
 		})
 
@@ -187,6 +259,15 @@ function registerTool(definition){
 	toolRegistry.set(definition.id, {
 		enabled: definition.enabled !== false,
 		evolutions: Array.isArray(definition.evolutions) ? definition.evolutions : [],
+		usage: {
+			activationCount: 0,
+			pointerDownCount: 0,
+			totalEnabledMs: 0,
+			totalCollapsedMs: 0,
+			customMetrics: {},
+			lastEnabledAt: null,
+			lastCollapsedAt: null
+		},
 		title: definition.title || definition.debugLabel || definition.id,
 		position: getDefaultToolPosition(index),
 		collapsed: false,
@@ -215,7 +296,13 @@ function enableTool(toolId){
 		return false
 	}
 
+	if (tool.enabled) {
+		ensureToolShell(tool)
+		return true
+	}
+
 	tool.enabled = true
+	startToolUsage(tool)
 	ensureToolShell(tool)
 	tool.onEnable?.({
 		container: getToolsContainer(),
@@ -231,6 +318,11 @@ function disableTool(toolId){
 		return false
 	}
 
+	if (!tool.enabled) {
+		return true
+	}
+
+	stopToolUsage(tool)
 	tool.enabled = false
 	tool.onDisable?.({
 		container: getToolsContainer(),
@@ -260,15 +352,25 @@ function renderTools(context = {}){
 }
 
 function buildLayoutSnapshot(){
+	const now = getNow()
+
 	return {
 		tools: [...toolRegistry.values()].reduce((snapshot, tool) => {
+			flushToolUsage(tool, now)
 			snapshot[tool.id] = {
 				position: {
 					x: Math.round(Number(tool.position?.x) || 0),
 					y: Math.round(Number(tool.position?.y) || 0)
 				},
 				collapsed: Boolean(tool.collapsed),
-				layer: Math.max(0, Math.round(Number(tool.layer) || 0))
+				layer: Math.max(0, Math.round(Number(tool.layer) || 0)),
+				usage: {
+					activationCount: Math.max(0, Math.round(Number(tool.usage?.activationCount) || 0)),
+					pointerDownCount: Math.max(0, Math.round(Number(tool.usage?.pointerDownCount) || 0)),
+					totalEnabledMs: Math.max(0, Math.round(Number(tool.usage?.totalEnabledMs) || 0)),
+					totalCollapsedMs: Math.max(0, Math.round(Number(tool.usage?.totalCollapsedMs) || 0)),
+					customMetrics: { ...(tool.usage?.customMetrics || {}) }
+				}
 			}
 			return snapshot
 		}, {})
@@ -292,6 +394,15 @@ function restoreLayout(layoutSnapshot){
 		}
 		tool.collapsed = Boolean(savedTool.collapsed)
 		tool.layer = Math.max(0, Math.round(Number(savedTool.layer) || 0))
+		tool.usage = {
+			activationCount: Math.max(0, Math.round(Number(savedTool.usage?.activationCount) || 0)),
+			pointerDownCount: Math.max(0, Math.round(Number(savedTool.usage?.pointerDownCount) || 0)),
+			totalEnabledMs: Math.max(0, Math.round(Number(savedTool.usage?.totalEnabledMs) || 0)),
+			totalCollapsedMs: Math.max(0, Math.round(Number(savedTool.usage?.totalCollapsedMs) || 0)),
+			customMetrics: { ...(savedTool.usage?.customMetrics || {}) },
+			lastEnabledAt: tool.enabled ? getNow() : null,
+			lastCollapsedAt: tool.enabled && tool.collapsed ? getNow() : null
+		}
 		highestLayer = Math.max(highestLayer, tool.layer)
 		updateCollapsedState(tool)
 		applyToolPosition(tool)
@@ -308,6 +419,7 @@ function centerToolLayout(){
 	nextToolLayer = 1
 
 	toolRegistry.forEach((tool) => {
+		tool.usage.lastCollapsedAt = null
 		tool.position = getDefaultToolPosition()
 		tool.collapsed = false
 		tool.layer = 0
@@ -316,12 +428,32 @@ function centerToolLayout(){
 	})
 }
 
+function recordToolMetric(toolId, metricName, delta = 1){
+	const tool = getTool(toolId)
+
+	if (!tool || !metricName) {
+		return false
+	}
+
+	const usage = ensureToolUsage(tool)
+	const currentValue = Number(usage.customMetrics[metricName]) || 0
+	usage.customMetrics[metricName] = currentValue + delta
+	return true
+}
+
 function getRegisteredTools(){
 	return [...toolRegistry.values()].map((tool) => ({
 		id: tool.id,
 		debugLabel: tool.debugLabel || tool.id,
 		enabled: tool.enabled,
-		evolutions: tool.evolutions || []
+		evolutions: tool.evolutions || [],
+		usage: {
+			activationCount: tool.usage?.activationCount || 0,
+			pointerDownCount: tool.usage?.pointerDownCount || 0,
+			totalEnabledMs: tool.usage?.totalEnabledMs || 0,
+			totalCollapsedMs: tool.usage?.totalCollapsedMs || 0,
+			customMetrics: { ...(tool.usage?.customMetrics || {}) }
+		}
 	}))
 }
 
@@ -333,6 +465,7 @@ window.humanityProtocolTools = {
 	getRegisteredTools,
 	isToolEnabled,
 	centerToolLayout,
+	recordToolMetric,
 	registerTool,
 	restoreLayout,
 	renderTools

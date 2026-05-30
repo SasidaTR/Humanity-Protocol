@@ -12,7 +12,13 @@ const SPEED_TO_TIME_SCALE = {
 	0: 0,
 	1: 60,
 	2: 120,
-	3: 240
+	3: 240,
+	4: 480,
+	5: 960,
+	6: 1920,
+	7: 3840,
+	8: 7680,
+	9: 15360
 }
 const DEFAULT_SIMULATION_STEP_HOURS = 1
 
@@ -165,7 +171,7 @@ function setSpeedMultiplier(nextMultiplier){
 		return speedMultiplier
 	}
 
-	speedMultiplier = Math.max(0, Math.min(3, Math.round(parsedMultiplier)))
+	speedMultiplier = Math.max(0, Math.min(9, Math.round(parsedMultiplier)))
 
 	if (speedMultiplier === 0) {
 		if (animationFrameId) {
@@ -195,7 +201,7 @@ function normalizeSpeedMultiplier(nextMultiplier){
 		return DEFAULT_SPEED_MULTIPLIER
 	}
 
-	return Math.max(0, Math.min(3, Math.round(nextMultiplier)))
+	return Math.max(0, Math.min(9, Math.round(nextMultiplier)))
 }
 
 function subscribe(listener){

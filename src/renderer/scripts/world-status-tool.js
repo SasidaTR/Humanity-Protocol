@@ -82,7 +82,19 @@ function formatSimulationSpeedIcon(speedMultiplier){
 		case 2:
 			return '▶▶'
 		case 3:
-			return '▶▶▶'
+			return '▶▶▶▶'
+		case 4:
+			return '▶×8'
+		case 5:
+			return '▶×16'
+		case 6:
+			return '▶×32'
+		case 7:
+			return '▶×64'
+		case 8:
+			return '▶×128'
+		case 9:
+			return '▶×256'
 		default:
 			return '▶'
 	}
