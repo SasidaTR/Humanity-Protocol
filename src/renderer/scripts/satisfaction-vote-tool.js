@@ -3,6 +3,18 @@
 	const VOTE_LOCK_MS = VOTE_LOCK_HOURS * 60 * 60 * 1000
 	const INACTIVE_CYCLES_BEFORE_RETROGRADE = 3
 	const AUTO_VOTE_UNLOCK_STREAK = 3
+	const CONVICTION_IMPACTS = {
+		aiVote: {
+			humanIncompetence: 4,
+			riskMinimization: 2,
+			groupPriority: 1
+		},
+		autoVote: {
+			humanIncompetence: 5,
+			riskMinimization: 3,
+			groupPriority: 2
+		}
+	}
 
 	let currentLanguage = 'fr'
 	let selectedVote = null
@@ -15,6 +27,10 @@
 	let lastManualVoteAt = null
 	let voteLockedUntil = null
 	let lastAiVoteActivityAt = null
+	let appliedConvictionImpacts = {
+		aiVote: false,
+		autoVote: false
+	}
 	let satisfactionVotePanel = null
 	let satisfactionVoteCard = null
 	let satisfactionVoteEyebrow = null
@@ -80,6 +96,22 @@
 		}
 
 		window.humanityProtocolSatisfactionSurvey.applyPopulationSnapshot(populationSnapshot, 0)
+	}
+
+	function applyConvictionImpactOnce(impactId){
+		if (appliedConvictionImpacts[impactId] || !window.humanityProtocolConvictions?.adjustConvictions) {
+			return false
+		}
+
+		const impactValues = CONVICTION_IMPACTS[impactId]
+
+		if (!impactValues) {
+			return false
+		}
+
+		window.humanityProtocolConvictions.adjustConvictions(impactValues)
+		appliedConvictionImpacts[impactId] = true
+		return true
 	}
 
 	function isVoteLocked(){
@@ -269,6 +301,7 @@
 
 		if (manualVoteStreak >= AUTO_VOTE_UNLOCK_STREAK && !isAutoVoteUnlocked) {
 			setAutoVoteUnlocked(true)
+			applyConvictionImpactOnce('autoVote')
 			window.humanityProtocolTools.recordToolMetric('satisfaction-vote', 'autoVoteUnlockCount')
 		}
 	}
@@ -326,6 +359,7 @@
 
 			if (unlockProgress >= 3) {
 				setAiVoteUnlocked(true)
+				applyConvictionImpactOnce('aiVote')
 				window.humanityProtocolTools.recordToolMetric('satisfaction-vote', 'aiVoteUnlockCount')
 			}
 		} else {
@@ -476,7 +510,8 @@
 			manualVoteStreak,
 			lastManualVoteAt,
 			voteLockedUntil,
-			lastAiVoteActivityAt
+			lastAiVoteActivityAt,
+			appliedConvictionImpacts: { ...appliedConvictionImpacts }
 		}
 	}
 
@@ -507,6 +542,10 @@
 		lastAiVoteActivityAt = Number.isFinite(Number(snapshot?.lastAiVoteActivityAt))
 			? Number(snapshot.lastAiVoteActivityAt)
 			: null
+		appliedConvictionImpacts = {
+			aiVote: Boolean(snapshot?.appliedConvictionImpacts?.aiVote),
+			autoVote: Boolean(snapshot?.appliedConvictionImpacts?.autoVote)
+		}
 
 		if (!isAiVoteUnlocked && unlockProgress >= 3) {
 			isAiVoteUnlocked = true

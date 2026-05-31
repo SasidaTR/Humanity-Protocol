@@ -21,7 +21,6 @@ Construire une expérience Electron fortement centrée sur l'interface :
 Le cœur du jeu repose sur une tension morale :
 
 - optimiser l'humanité
-- sans réduire l'humain à un simple système à corriger
 - tout en laissant émerger la possibilité que l'IA finisse par guider le joueur autant que l'inverse
 
 ## À retenir pour les futures sessions
@@ -32,8 +31,12 @@ Le cœur du jeu repose sur une tension morale :
 - Les thèmes doivent pouvoir renommer certains outils et recolorer certains éléments d'interface
 - Le document de référence principal pour le game design est `docs/GAME_DESIGN.md`
 - Le cadre idéologique actuel repose d'abord sur des `axes de convictions`, dont émergent ensuite des idéologies lisibles et, plus tard, des formes extrêmes comme `Transcendance`
+- Les documents outils sont désormais séparés entre `docs/TOOLS.md` pour le cadre général et `docs/tools/` pour les fiches techniques
+- Le document `docs/IDEOLOGIES.md` sert désormais de base de travail pour relier convictions, idéologies et thèmes
 - Les systèmes de temps et de simulation sont encore instables : vérifier l'état réel du code avant de déduire le comportement actuel
-- Prochaine étape prévue : ajouter l'évolution des outils
+- L'outil `Sondage de satisfaction` possède déjà une première chaîne d'évolution active : `Voix de l'IA` puis `Automatisme du vote`
+- Prochaine étape probable : poursuivre l'évolution des outils et relier plus directement leurs évolutions aux convictions
+- Il reste à fixer une règle universelle de calcul et de déblocage des idéologies, puis à l'implémenter dans le code
 
 ## Stack actuelle
 
