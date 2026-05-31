@@ -70,7 +70,11 @@ function stopAutosave(){
 }
 
 async function saveCurrentRun(){
-	if (!sessionState.hasActiveRun || !sessionState.lastNonMenuScreen || !sessionState.currentSaveId) {
+	if (
+		!sessionState.hasActiveRun ||
+		sessionState.lastNonMenuScreen !== 'game' ||
+		!sessionState.currentSaveId
+	) {
 		return null
 	}
 
@@ -105,7 +109,7 @@ function syncAutosaveWithScreen(screenName){
 		return
 	}
 
-	if (resumableScreens.has(screenName)) {
+	if (screenName === 'game') {
 		startAutosave()
 		return
 	}

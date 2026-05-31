@@ -31,6 +31,7 @@ Le cœur du jeu repose sur une tension morale :
 - Conserver la distance avec l'humain : le joueur voit surtout des signaux, rapports, votes, simulations et anomalies
 - Les thèmes doivent pouvoir renommer certains outils et recolorer certains éléments d'interface
 - Le document de référence principal pour le game design est `GAME_DESIGN.md`
+- Le cadre idéologique actuel repose d'abord sur des `axes de convictions`, dont émergent ensuite des idéologies lisibles et, plus tard, des formes extrêmes comme `Transcendance`
 - Les systèmes de temps et de simulation sont encore instables : vérifier l'état réel du code avant de déduire le comportement actuel
 - Prochaine étape prévue : ajouter l'évolution des outils
 

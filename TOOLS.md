@@ -54,6 +54,36 @@ Format recommandé pour chaque outil :
 - `Compatibilités et exclusivités`
 - `Pistes futures`
 
+## Lien entre outils et convictions
+
+Les outils ne doivent pas évoluer indépendamment des convictions de l'IA.
+
+Chaque évolution importante d'un outil doit idéalement préciser :
+
+- quels `axes de convictions` elle déplace :
+  - vision de l'humain
+  - source du bonheur
+  - source du progrès
+  - gestion du risque
+  - valeur de l'individu
+  - modification de l'humain
+- dans quelle direction elle pousse ces axes
+- si elle augmente la difficulté de revenir vers une logique laissant plus d'autonomie humaine
+- si elle entre en tension avec certaines autres branches
+
+Règles de cohérence à retenir :
+
+- un outil très développé dans une logique de contrainte ne doit pas rester moralement neutre
+- un outil d'observation peut rester plus ambigu plus longtemps qu'un outil de gouvernance ou de sécurité
+- les nœuds d'un même outil peuvent pousser des convictions différentes, mais pas sans friction
+- plus un joueur cumule des outils alignés, plus une idéologie émergente doit devenir lisible
+- un nœud n'a pas besoin d'afficher directement son effet moral au joueur, mais le design doit le savoir
+
+Conséquence de production :
+
+- à chaque nouvel outil ou nouveau nœud important, prévoir au moins une note `impact sur les convictions`
+- à moyen terme, les futurs thèmes, renommages et rapports devront découler de cette couche plutôt que d'un simple choix cosmétique
+
 ## Outils actuels
 
 ### Sondage de satisfaction

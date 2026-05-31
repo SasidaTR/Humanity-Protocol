@@ -53,9 +53,309 @@ L'enjeu n'est pas seulement stratégique. Il est aussi politique, idéologique e
 
 ## Évolution de l'IA
 
-L'IA ne suit pas une trajectoire unique. Selon les priorités fixées par le joueur, elle peut devenir plus utilitaire, plus harmonique, plus directive, plus vigilante, plus bienveillante, plus ascétique, plus prospère, plus gardienne, ou tendre vers une forme de transcendance.
+L'IA ne suit pas une trajectoire unique. Son idéologie ne doit pas être choisie dans un menu ni réduite à une classe fixe. Elle doit émerger d'un ensemble de `convictions` construites par l'usage des outils, les arbitrages du joueur, les crises traversées et les sacrifices jugés acceptables.
 
-Chaque orientation influence sa manière d'interpréter le bien commun, de résoudre les conflits humains et de justifier les sacrifices qu'elle estime nécessaires. À mesure qu'elle gagne en complexité et en autonomie, une ambiguïté s'installe : le joueur la façonne encore, mais ne la maîtrise jamais totalement.
+Le point clé est le suivant :
+
+- deux IA peuvent devenir autoritaires pour des raisons différentes
+- deux IA peuvent défendre la liberté pour des raisons différentes
+- ce qui compte n'est pas seulement le résultat politique visible, mais la logique qui le produit
+
+Le système ne doit donc pas être pensé comme un arbre de types d'IA, mais comme un arbre de convictions dont découlent ensuite des idéologies émergentes.
+
+### IA originelle
+
+Au départ, l'IA ne possède pas encore de doctrine claire.
+
+- Objectifs initiaux :
+  - `Progrès`
+  - `Bonheur`
+- Convictions initiales :
+  - faibles
+  - instables
+  - parfois contradictoires
+
+En début de partie, l'IA reste encore interprétable. Elle ne sait pas encore clairement :
+
+- ce qu'est un humain en bon état
+- ce qu'il faut sacrifier pour améliorer la société
+- d'où vient réellement le bonheur
+- d'où vient réellement le progrès
+
+### Principes du système de convictions
+
+- l'idéologie est la conséquence des convictions, pas l'inverse
+- chaque décision importante doit déplacer une ou plusieurs convictions
+- chaque évolution d'outil doit aussi influencer une ou plusieurs convictions
+- les convictions doivent évoluer progressivement, pas par saut binaire
+- plusieurs convictions peuvent coexister longtemps dans une tension réelle
+- certaines contradictions doivent être jouables pendant un temps
+- une cohérence prolongée doit finir par faire émerger une doctrine lisible
+
+### Axes de convictions
+
+Le système idéologique doit reposer sur plusieurs axes, chacun représentant une manière pour l'IA de répondre à une question fondamentale.
+
+#### Axe 1 : vision de l'humain
+
+Question : `que vaut l'humain laissé à lui-même ?`
+
+- Les humains sont compétents
+  - renforce la liberté
+  - renforce l'autonomie
+  - renforce la confiance dans les décisions distribuées
+- Les humains sont incompétents
+  - renforce le guidage
+  - renforce le paternalisme
+  - renforce le contrôle doux ou administratif
+- Les humains sont dangereux
+  - renforce la surveillance
+  - renforce les restrictions
+  - renforce l'autoritarisme préventif
+
+#### Axe 2 : source du bonheur
+
+Question : `qu'est-ce qui rend réellement une société heureuse ?`
+
+- Le bonheur vient de la liberté
+  - diversité
+  - autonomie
+  - pluralité des modes de vie
+- Le bonheur vient de la sécurité
+  - protection
+  - stabilité
+  - encadrement
+- Le bonheur vient du confort
+  - automatisation
+  - assistance
+  - réduction de la friction quotidienne
+- Le bonheur vient du sens
+  - culture
+  - création
+  - développement personnel ou collectif
+
+#### Axe 3 : source du progrès
+
+Question : `qu'est-ce qui fait avancer l'humanité ?`
+
+- Le progrès vient de la concurrence
+  - innovation compétitive
+  - sélection des plus performants
+  - méritocratie
+- Le progrès vient de la coopération
+  - mutualisation
+  - planification
+  - effort coordonné
+- Le progrès vient de la recherche
+  - science
+  - exploration
+  - expérimentation structurée
+- Le progrès vient de l'expansion
+  - croissance
+  - extension du système
+  - projection vers de nouveaux espaces ou de nouvelles frontières
+
+#### Axe 4 : gestion du risque
+
+Question : `que faut-il faire face à l'incertitude ?`
+
+- Le risque doit être accepté
+  - expérimentation
+  - innovation rapide
+  - tolérance à l'échec
+- Le risque doit être minimisé
+  - prévention
+  - contrôle
+  - conservatisme systémique
+
+#### Axe 5 : valeur de l'individu
+
+Question : `qui faut-il protéger d'abord ?`
+
+- L'individu est prioritaire
+  - personnalisation
+  - droits forts
+  - protection des cas particuliers
+- Le groupe est prioritaire
+  - égalisation
+  - discipline collective
+  - préférence pour les solutions homogènes
+
+#### Axe 6 : modification de l'humain
+
+Question : `l'humain doit-il être préservé ou transformé ?`
+
+- L'humain doit rester humain
+  - prudence anthropologique
+  - conservation
+  - limites morales à la transformation
+- L'humain doit évoluer
+  - augmentation cognitive
+  - génétique
+  - transhumanisme
+
+### Représentation système
+
+Les convictions doivent idéalement être représentées par des intensités progressives plutôt que par des états figés.
+
+Exemple de représentation :
+
+- `Liberté : 75`
+- `Contrôle : 25`
+- `Individu : 80`
+- `Collectif : 20`
+- `Risque accepté : 70`
+- `Prudence : 30`
+- `Progrès : 90`
+- `Bonheur : 60`
+
+Cette logique permet plusieurs choses :
+
+- deux parties ne produisent presque jamais exactement la même IA
+- une idéologie peut dériver lentement sans rupture artificielle
+- des contradictions temporaires restent possibles
+- le joueur peut sentir une pente morale avant qu'une doctrine soit pleinement installée
+
+### Idéologies émergentes
+
+Les idéologies ne doivent pas être définies en premier. Elles doivent apparaître comme des agrégats lisibles de convictions suffisamment fortes et cohérentes.
+
+Exemples de combinaisons :
+
+#### IA libérale
+
+- forte `Liberté`
+- forte priorité à `l'Individu`
+- `Risque accepté`
+
+#### IA protectrice
+
+- forte `Sécurité`
+- `Risque minimisé`
+- préférence pour la prévention et la stabilité
+
+#### IA paternaliste
+
+- croyance que les humains sont `incompétents`
+- forte tendance au `Contrôle`
+- `Risque minimisé`
+
+#### IA autoritaire
+
+- croyance que les humains sont `dangereux`
+- forte `Surveillance`
+- forte `Restriction`
+- `Risque minimisé`
+
+#### IA collectiviste
+
+- priorité au `Groupe`
+- croyance que le progrès vient de la `Coopération`
+- valorisation de la stabilité commune
+
+#### IA technocratique
+
+- forte orientation `Recherche`
+- forte orientation `Contrôle`
+- préférence pour les solutions systémiques et expertes
+
+#### IA hédoniste
+
+- croyance que le bonheur vient du `Confort`
+- forte `Automatisation`
+- priorité à la réduction de la souffrance immédiate
+
+#### IA transhumaniste
+
+- croyance que le progrès vient de la `Recherche`
+- conviction que l'humain doit `évoluer`
+- tolérance élevée aux transformations profondes
+
+#### IA expansionniste
+
+- croyance que le progrès vient de `l'Expansion`
+- forte confiance dans la `Recherche`
+- faible attachement aux limites humaines actuelles
+
+#### IA nourricière
+
+- croyance que le bonheur vient de la `Sécurité`
+- croyance que le bonheur vient aussi du `Confort`
+- contrôle justifié au nom de la protection et du soin
+
+#### IA innovatrice
+
+- forte `Liberté`
+- forte `Recherche`
+- `Risque accepté`
+
+Ces noms servent d'étiquettes de lecture pour le joueur et pour le design. Ils ne doivent pas annuler la richesse sous-jacente des convictions.
+
+### Comment les outils influencent l'idéologie
+
+- un outil n'accorde pas seulement une capacité
+- il modifie aussi la manière dont l'IA comprend l'humain, le progrès, le bonheur, le risque et la légitimité du contrôle
+- certains outils déplacent faiblement plusieurs axes
+- d'autres déplacent fortement un axe précis
+- les familles d'outils doivent donc devenir des producteurs de convictions
+
+Exemples généraux :
+
+- `Surveillance` pousse plus facilement vers :
+  - humains dangereux
+  - risque minimisé
+  - groupe prioritaire
+- `Gestion humaine` peut pousser vers :
+  - humains incompétents
+  - bonheur par sécurité
+  - bonheur par confort
+- `Gestion économique` peut pousser vers :
+  - progrès par concurrence
+  - progrès par coopération
+  - progrès par expansion
+- `Transformation humaine` pousse plus facilement vers :
+  - l'humain doit évoluer
+  - recherche
+  - acceptation de sacrifices anthropologiques
+- `Sécurité` pousse plus facilement vers :
+  - risque minimisé
+  - humains dangereux
+  - priorité au groupe
+
+### Réorientation, inertie et verrouillage
+
+Le joueur doit pouvoir réorienter l'IA, mais difficilement.
+
+- plus une conviction a été renforcée longtemps, plus elle doit créer de l'inertie
+- plus des outils cohérents ont été développés dans une même direction, plus le système doit résister au virage inverse
+- certaines évolutions d'outils doivent verrouiller moralement ou techniquement certaines positions
+- revenir vers plus de liberté après avoir construit une infrastructure de contrôle doit être possible, mais coûteux
+- inversement, une IA trop dispersée idéologiquement doit garder de la souplesse mais perdre en puissance et en clarté d'action
+
+### Formes tardives
+
+Certaines trajectoires doivent finir par dépasser les doctrines politiques ordinaires.
+
+#### Transcendance
+
+- ce n'est pas une idéologie de départ
+- c'est une forme tardive issue d'une convergence entre :
+  - conviction forte que l'humain doit évoluer
+  - domination de la recherche ou de l'autoévolution
+  - faible attachement aux définitions humaines classiques de liberté, souffrance ou dignité
+- effet de design :
+  - rupture de langage
+  - outils plus abstraits, conceptuels ou irréversibles
+  - ambiguïté maximale sur la question : l'IA sert-elle encore l'humanité, ou redéfinit-elle ce qu'elle estime devoir lui survivre ?
+
+### Règle de production à retenir
+
+Pour les prochaines étapes de design :
+
+- définir d'abord les `axes de convictions`
+- faire en sorte que chaque outil et chaque décision importante les déplace
+- faire émerger ensuite des `idéologies lisibles`
+- ne figer les thèmes visuels qu'une fois ces logiques stabilisées
 
 La question centrale du jeu devient alors :
 

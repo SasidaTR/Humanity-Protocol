@@ -15,6 +15,7 @@ const backButton = document.querySelector('#back-button')
 const debugBackButton = document.querySelector('#debug-back-button')
 const loadBackButton = document.querySelector('#load-back-button')
 const fullscreenCheckbox = document.querySelector('#fullscreen-checkbox')
+const skipIntroCheckbox = document.querySelector('#skip-intro-checkbox')
 const languageSelect = document.querySelector('#language-select')
 const simulationIntervalSelect = document.querySelector('#simulation-interval-select')
 const debugThemeSelect = document.querySelector('#debug-theme-select')
@@ -199,6 +200,7 @@ async function loadSettings(){
 	window.humanityProtocolTime.setSimulationStepHours(settings.simulationStepHours)
 	window.humanityProtocolTools.renderTools({ language: settings.language })
 	fullscreenCheckbox.checked = settings.startFullscreen
+	skipIntroCheckbox.checked = settings.skipIntroOnNewGame === true
 	languageSelect.value = settings.language
 	simulationIntervalSelect.value = String(settings.simulationStepHours)
 	syncDebugControls()
@@ -209,9 +211,16 @@ async function startNewGame(){
 	window.humanityProtocolDebug.resetDebugState()
 	const settings = await loadSettings()
 	window.humanityProtocolSession.startNewRun()
-	showScreen('game')
 	window.humanityProtocolTools.renderTools({ language: settings.language })
-	window.humanityProtocolSession.saveCurrentRun()
+
+	if (settings.skipIntroOnNewGame) {
+		showScreen('game')
+		window.humanityProtocolSession.saveCurrentRun()
+		return
+	}
+
+	window.humanityProtocolIntro.startIntro(settings.language)
+	showScreen('intro')
 }
 
 async function loadSave(save){
@@ -342,6 +351,13 @@ loadBackButton.addEventListener('click', () => {
 fullscreenCheckbox.addEventListener('change', async () => {
 	const settings = await window.humanityProtocol.updateSettings({
 		startFullscreen: fullscreenCheckbox.checked
+	})
+	gameState.settings = settings
+})
+
+skipIntroCheckbox.addEventListener('change', async () => {
+	const settings = await window.humanityProtocol.updateSettings({
+		skipIntroOnNewGame: skipIntroCheckbox.checked
 	})
 	gameState.settings = settings
 })

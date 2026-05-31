@@ -11,6 +11,7 @@ const ALLOWED_SIMULATION_STEP_HOURS = [
 const defaultSettings = {
 	startFullscreen: true,
 	language: 'fr',
+	skipIntroOnNewGame: false,
 	simulationStepHours: 1,
 	debug: {
 		theme: 'default',

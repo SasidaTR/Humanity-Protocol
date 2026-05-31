@@ -15,6 +15,7 @@ const translations = {
 		settings: {
 			title: 'Paramètres',
 			fullscreen: 'Plein écran',
+			skipIntroOnNewGame: "Passer l'introduction pour les nouvelles parties",
 			language: 'Langue',
 			simulationInterval: "Pas d'actualisation du monde (heures de jeu)",
 			languageFr: 'Français',
@@ -73,6 +74,7 @@ const translations = {
 		settings: {
 			title: 'Settings',
 			fullscreen: 'Fullscreen',
+			skipIntroOnNewGame: 'Skip introduction for new games',
 			language: 'Language',
 			simulationInterval: 'World refresh step (game hours)',
 			languageFr: 'French',
