@@ -426,11 +426,22 @@ debugToolsList.addEventListener('change', async (event) => {
 
 	if (input.dataset.evolutionId) {
 		const activeEvolutions = new Set(debugSettings.toolEvolutions[input.dataset.toolId] || [])
+		const isSatisfactionVoteTool = input.dataset.toolId === 'satisfaction-vote'
+		const isAiVoteEvolution = input.dataset.evolutionId === 'ai-vote'
+		const isAutoVoteEvolution = input.dataset.evolutionId === 'auto-vote'
 
 		if (input.checked) {
 			activeEvolutions.add(input.dataset.evolutionId)
+
+			if (isSatisfactionVoteTool && isAutoVoteEvolution) {
+				activeEvolutions.add('ai-vote')
+			}
 		} else {
 			activeEvolutions.delete(input.dataset.evolutionId)
+
+			if (isSatisfactionVoteTool && isAiVoteEvolution) {
+				activeEvolutions.delete('auto-vote')
+			}
 		}
 
 		await updateDebugSettings({

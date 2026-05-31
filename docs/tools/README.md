@@ -13,3 +13,4 @@ Fiches actuelles :
 
 - [Sondage de satisfaction](satisfaction-vote.md)
 - [État mondial](world-status.md)
+- [Lois universelles](universal-laws.md)

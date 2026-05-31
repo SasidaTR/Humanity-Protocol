@@ -44,6 +44,7 @@ function syncToolAvailability(){
 	const isWorldStatusAvailable = sessionState.hasActiveRun && sessionState.lastNonMenuScreen !== 'intro'
 	setToolAvailability('satisfaction-vote', isWorldStatusAvailable)
 	setToolAvailability('world-status', isWorldStatusAvailable)
+	setToolAvailability('universal-laws', isWorldStatusAvailable)
 }
 
 function syncSimulationWithScreen(screenName){
@@ -131,7 +132,8 @@ function buildSaveSnapshot(){
 		ui: {
 			...window.humanityProtocolTheme.buildThemeSnapshot(),
 			toolLayout: window.humanityProtocolTools.buildLayoutSnapshot(),
-			satisfactionVote: window.humanityProtocolSatisfactionVoteTool.buildSnapshot()
+			satisfactionVote: window.humanityProtocolSatisfactionVoteTool.buildSnapshot(),
+			universalLaws: window.humanityProtocolUniversalLawsTool.buildSnapshot()
 		}
 	}
 }
@@ -159,6 +161,7 @@ function resetRunSystems(){
 	window.humanityProtocolFunds.resetFunds()
 	window.humanityProtocolConvictions.resetConvictions()
 	window.humanityProtocolSatisfactionVoteTool.resetState()
+	window.humanityProtocolUniversalLawsTool.resetState()
 }
 
 function resetRunState({ resetTools = false, clearSaveId = false } = {}){
@@ -211,6 +214,7 @@ function restoreRun(save){
 	window.humanityProtocolFunds.restoreFunds(save)
 	window.humanityProtocolConvictions.restoreConvictions(save)
 	window.humanityProtocolSatisfactionVoteTool.restoreSnapshot(save)
+	window.humanityProtocolUniversalLawsTool.restoreSnapshot(save)
 	syncToolAvailability()
 }
 

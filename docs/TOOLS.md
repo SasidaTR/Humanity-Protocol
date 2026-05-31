@@ -128,3 +128,4 @@ Format conseillé :
 - [Index des fiches](tools/README.md)
 - [Sondage de satisfaction](tools/satisfaction-vote.md)
 - [État mondial](tools/world-status.md)
+- [Lois universelles](tools/universal-laws.md)

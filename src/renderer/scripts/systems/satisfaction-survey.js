@@ -65,6 +65,56 @@ const INCOME_LEVEL_MODIFIERS = {
 		satisfactionRate: 0.14
 	}
 }
+const AUTHORITY_RELATION_MODIFIERS = {
+	supportive: {
+		turnoutRate: 0.05,
+		satisfactionRate: 0.01
+	},
+	neutral: {
+		turnoutRate: 0,
+		satisfactionRate: 0
+	},
+	defiant: {
+		turnoutRate: -0.08,
+		satisfactionRate: -0.02
+	}
+}
+const EDUCATION_MODIFIERS = {
+	low: {
+		turnoutRate: -0.09,
+		satisfactionRate: -0.02
+	},
+	medium: {
+		turnoutRate: 0,
+		satisfactionRate: 0
+	},
+	high: {
+		turnoutRate: 0.07,
+		satisfactionRate: 0.01
+	}
+}
+const HEALTH_MODIFIERS = {
+	healthy: {
+		votingCapacityRate: 1,
+		turnoutRate: 0.01,
+		satisfactionRate: 0.02
+	},
+	mentalFragile: {
+		votingCapacityRate: 0.95,
+		turnoutRate: -0.06,
+		satisfactionRate: -0.1
+	},
+	physicalFragile: {
+		votingCapacityRate: 0.88,
+		turnoutRate: -0.09,
+		satisfactionRate: -0.11
+	},
+	dualFragile: {
+		votingCapacityRate: 0.76,
+		turnoutRate: -0.14,
+		satisfactionRate: -0.18
+	}
+}
 const OPINION_NOISE = {
 	turnoutRate: 0.025,
 	satisfactionRate: 0.04
@@ -130,7 +180,6 @@ function buildSeedVoteGroups(totalVotes, satisfactionRate){
 		const votes = baseVotesPerGroup + (groupIndex < extraVotes ? 1 : 0)
 		const remainingHours = ACTIVE_VOTE_DURATION_HOURS * ((groupIndex + 1) / groupCount)
 		const targetSatisfiedVotes = Math.round(votes * satisfactionRate)
-		const remainingVotes = boundedTotalVotes - assignedVotes
 		const remainingSatisfiedVotes = Math.max(0, Math.round((boundedTotalVotes * satisfactionRate) - assignedSatisfiedVotes))
 		const satisfiedVotes = groupIndex === groupCount - 1
 			? Math.min(votes, remainingSatisfiedVotes)
@@ -249,6 +298,20 @@ function getPopulationIncomeShares(populationSnapshot){
 	}
 }
 
+function getPopulationGroupedShares(populationSnapshot, key, defaultShares){
+	const totalPopulation = Math.max(0, Number(populationSnapshot?.total) || 0)
+	const groups = populationSnapshot?.[key] || {}
+
+	if (totalPopulation <= 0) {
+		return { ...defaultShares }
+	}
+
+	return Object.keys(defaultShares).reduce((shares, groupId) => {
+		shares[groupId] = clamp((Number(groups[groupId]) || 0) / totalPopulation, 0, 1)
+		return shares
+	}, {})
+}
+
 function getWorkingAgeActivityShares(populationSnapshot){
 	const workingAgePopulation = Math.max(0, Number(populationSnapshot?.activity?.workers) || 0) + Math.max(0, Number(populationSnapshot?.activity?.nonWorkers) || 0)
 
@@ -269,6 +332,22 @@ function buildAdultCohorts(populationSnapshot){
 	const age = populationSnapshot?.age || {}
 	const incomeShares = getPopulationIncomeShares(populationSnapshot)
 	const activityShares = getWorkingAgeActivityShares(populationSnapshot)
+	const authorityRelationShares = getPopulationGroupedShares(populationSnapshot, 'authorityRelation', {
+		supportive: 0.27,
+		neutral: 0.46,
+		defiant: 0.27
+	})
+	const educationShares = getPopulationGroupedShares(populationSnapshot, 'education', {
+		low: 0.34,
+		medium: 0.46,
+		high: 0.2
+	})
+	const healthShares = getPopulationGroupedShares(populationSnapshot, 'health', {
+		healthy: 0.75,
+		mentalFragile: 0.09,
+		physicalFragile: 0.11,
+		dualFragile: 0.05
+	})
 	const adultAgeCounts = {
 		age18To34: Math.max(0, Number(age.age18To34) || 0),
 		age35To64: Math.max(0, Number(age.age35To64) || 0),
@@ -278,31 +357,51 @@ function buildAdultCohorts(populationSnapshot){
 
 	Object.entries(incomeShares).forEach(([incomeLevelId, incomeShare]) => {
 		Object.entries(activityShares).forEach(([activityId, activityShare]) => {
-			const age18To34Population = adultAgeCounts.age18To34 * incomeShare * activityShare
-			const age35To64Population = adultAgeCounts.age35To64 * incomeShare * activityShare
+			Object.entries(authorityRelationShares).forEach(([authorityRelationId, authorityRelationShare]) => {
+				Object.entries(educationShares).forEach(([educationId, educationShare]) => {
+					Object.entries(healthShares).forEach(([healthId, healthShare]) => {
+						const combinedShare = incomeShare * activityShare * authorityRelationShare * educationShare * healthShare
 
-			cohorts.push({
-				id: `age18To34:${activityId}:${incomeLevelId}`,
-				ageGroupId: 'age18To34',
-				activityId,
-				incomeLevelId,
-				population: age18To34Population
-			})
-			cohorts.push({
-				id: `age35To64:${activityId}:${incomeLevelId}`,
-				ageGroupId: 'age35To64',
-				activityId,
-				incomeLevelId,
-				population: age35To64Population
+						cohorts.push({
+							id: `age18To34:${activityId}:${incomeLevelId}:${authorityRelationId}:${educationId}:${healthId}`,
+							ageGroupId: 'age18To34',
+							activityId,
+							incomeLevelId,
+							authorityRelationId,
+							educationId,
+							healthId,
+							population: adultAgeCounts.age18To34 * combinedShare
+						})
+						cohorts.push({
+							id: `age35To64:${activityId}:${incomeLevelId}:${authorityRelationId}:${educationId}:${healthId}`,
+							ageGroupId: 'age35To64',
+							activityId,
+							incomeLevelId,
+							authorityRelationId,
+							educationId,
+							healthId,
+							population: adultAgeCounts.age35To64 * combinedShare
+						})
+					})
+				})
 			})
 		})
 
-		cohorts.push({
-			id: `age65Plus:none:${incomeLevelId}`,
-			ageGroupId: 'age65Plus',
-			activityId: 'none',
-			incomeLevelId,
-			population: adultAgeCounts.age65Plus * incomeShare
+		Object.entries(authorityRelationShares).forEach(([authorityRelationId, authorityRelationShare]) => {
+			Object.entries(educationShares).forEach(([educationId, educationShare]) => {
+				Object.entries(healthShares).forEach(([healthId, healthShare]) => {
+					cohorts.push({
+						id: `age65Plus:none:${incomeLevelId}:${authorityRelationId}:${educationId}:${healthId}`,
+						ageGroupId: 'age65Plus',
+						activityId: 'none',
+						incomeLevelId,
+						authorityRelationId,
+						educationId,
+						healthId,
+						population: adultAgeCounts.age65Plus * incomeShare * authorityRelationShare * educationShare * healthShare
+					})
+				})
+			})
 		})
 	})
 
@@ -313,13 +412,20 @@ function buildCohortTarget(cohort, baselineSatisfaction){
 	const ageProfile = AGE_VOTER_PROFILES[cohort.ageGroupId]
 	const activityModifiers = ACTIVITY_VOTER_MODIFIERS[cohort.activityId] || ACTIVITY_VOTER_MODIFIERS.none
 	const incomeModifiers = INCOME_LEVEL_MODIFIERS[cohort.incomeLevelId] || INCOME_LEVEL_MODIFIERS.middleIncome
+	const authorityRelationModifiers = AUTHORITY_RELATION_MODIFIERS[cohort.authorityRelationId] || AUTHORITY_RELATION_MODIFIERS.neutral
+	const educationModifiers = EDUCATION_MODIFIERS[cohort.educationId] || EDUCATION_MODIFIERS.medium
+	const healthModifiers = HEALTH_MODIFIERS[cohort.healthId] || HEALTH_MODIFIERS.healthy
 	const worldMoodOffset = (baselineSatisfaction - INITIAL_WORLD_SATISFACTION) / 100
 
 	return {
+		votingCapacityRate: clamp(healthModifiers.votingCapacityRate, 0.45, 1),
 		turnoutRate: clamp(
 			ageProfile.turnoutRate +
 			activityModifiers.turnoutRate +
 			incomeModifiers.turnoutRate +
+			authorityRelationModifiers.turnoutRate +
+			educationModifiers.turnoutRate +
+			healthModifiers.turnoutRate +
 			(worldMoodOffset * 0.08),
 			TURNOUT_RATE_RANGE.min,
 			TURNOUT_RATE_RANGE.max
@@ -328,6 +434,9 @@ function buildCohortTarget(cohort, baselineSatisfaction){
 			ageProfile.satisfactionRate +
 			activityModifiers.satisfactionRate +
 			incomeModifiers.satisfactionRate +
+			authorityRelationModifiers.satisfactionRate +
+			educationModifiers.satisfactionRate +
+			healthModifiers.satisfactionRate +
 			(worldMoodOffset * 0.3),
 			SATISFACTION_RATE_RANGE.min,
 			SATISFACTION_RATE_RANGE.max
@@ -342,6 +451,7 @@ function getCohortSatisfactionNoise(targetRate){
 
 function createCohortState(target){
 	return {
+		votingCapacityRate: clamp(Number(target.votingCapacityRate) || 1, 0.45, 1),
 		turnoutRate: clamp(
 			target.turnoutRate + ((Math.random() - 0.5) * OPINION_NOISE.turnoutRate),
 			TURNOUT_RATE_RANGE.min,
@@ -358,7 +468,12 @@ function createCohortState(target){
 }
 
 function reconcileCohortState(cohortState, target, population, elapsedHours){
+	const effectivePopulation = Math.max(
+		0,
+		population * clamp(Number(target.votingCapacityRate) || 1, 0.45, 1)
+	)
 	const nextCohortState = {
+		votingCapacityRate: clamp(Number(cohortState?.votingCapacityRate) || target.votingCapacityRate, 0.45, 1),
 		turnoutRate: clamp(Number(cohortState?.turnoutRate) || target.turnoutRate, TURNOUT_RATE_RANGE.min, TURNOUT_RATE_RANGE.max),
 		satisfactionRate: clamp(Number(cohortState?.satisfactionRate) || target.satisfactionRate, SATISFACTION_RATE_RANGE.min, SATISFACTION_RATE_RANGE.max),
 		hoursUntilRefresh: Math.max(0, Number(cohortState?.hoursUntilRefresh) || getRandomCohortVoteHours()),
@@ -367,16 +482,21 @@ function reconcileCohortState(cohortState, target, population, elapsedHours){
 
 	if (nextCohortState.activeVoteGroups.length === 0) {
 		nextCohortState.activeVoteGroups = buildSeedVoteGroups(
-			Math.round(Math.max(0, population) * nextCohortState.turnoutRate),
+			Math.round(effectivePopulation * nextCohortState.turnoutRate),
 			nextCohortState.satisfactionRate
 		)
 	}
 
 	nextCohortState.activeVoteGroups = advanceVoteGroups(nextCohortState.activeVoteGroups, elapsedHours)
-	nextCohortState.activeVoteGroups = limitVoteGroupsToPopulation(nextCohortState.activeVoteGroups, population)
+	nextCohortState.activeVoteGroups = limitVoteGroupsToPopulation(nextCohortState.activeVoteGroups, effectivePopulation)
 	let hoursUntilRefresh = nextCohortState.hoursUntilRefresh - Math.max(0, Number(elapsedHours) || 0)
 
 	while (hoursUntilRefresh <= 0) {
+		nextCohortState.votingCapacityRate = clamp(
+			(nextCohortState.votingCapacityRate * 0.35) + (target.votingCapacityRate * 0.65),
+			0.45,
+			1
+		)
 		nextCohortState.turnoutRate = clamp(
 			(nextCohortState.turnoutRate * 0.4) +
 			(target.turnoutRate * 0.6) +
@@ -397,9 +517,9 @@ function reconcileCohortState(cohortState, target, population, elapsedHours){
 	nextCohortState.hoursUntilRefresh = hoursUntilRefresh
 
 	const voteSummary = summarizeVoteGroups(nextCohortState.activeVoteGroups)
-	const targetActiveVotes = Math.round(Math.max(0, population) * nextCohortState.turnoutRate)
+	const targetActiveVotes = Math.round(effectivePopulation * nextCohortState.turnoutRate)
 	const additionalVotes = Math.max(0, Math.min(
-		Math.max(0, Math.round(population) - voteSummary.totalVotes),
+		Math.max(0, Math.round(effectivePopulation) - voteSummary.totalVotes),
 		targetActiveVotes - voteSummary.totalVotes
 	))
 
@@ -426,7 +546,7 @@ function buildSurveySnapshot(){
 		: INITIAL_WORLD_SATISFACTION
 
 	return {
-		version: 3,
+		version: 4,
 		satisfiedVotes,
 		dissatisfiedVotes,
 		totalVotes,
@@ -532,6 +652,7 @@ function restoreSurvey(save){
 	surveyState.lastUpdatedAt = Number(savedSurvey.lastUpdatedAt) || Date.now()
 	surveyState.cohorts = Object.entries(savedSurvey.cohorts).reduce((cohorts, [cohortId, cohortState]) => {
 		cohorts[cohortId] = {
+			votingCapacityRate: clamp(Number(cohortState?.votingCapacityRate) || 1, 0.45, 1),
 			turnoutRate: clamp(Number(cohortState?.turnoutRate) || INITIAL_TURNOUT_RATE, TURNOUT_RATE_RANGE.min, TURNOUT_RATE_RANGE.max),
 			satisfactionRate: clamp(Number(cohortState?.satisfactionRate) || (INITIAL_WORLD_SATISFACTION / 100), SATISFACTION_RATE_RANGE.min, SATISFACTION_RATE_RANGE.max),
 			hoursUntilRefresh: Math.max(0, Number(cohortState?.hoursUntilRefresh) || getRandomCohortVoteHours()),
@@ -565,5 +686,3 @@ window.humanityProtocolSatisfactionSurvey = {
 	restoreSurvey,
 	subscribe
 }
-
-resetSurvey()

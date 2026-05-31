@@ -14,6 +14,22 @@ const INCOME_LEVEL_GROUPS = {
 	comfortableIncome: 0.15,
 	highIncome: 0.07
 }
+const AUTHORITY_RELATION_GROUPS = {
+	supportive: 0.27,
+	neutral: 0.46,
+	defiant: 0.27
+}
+const EDUCATION_GROUPS = {
+	low: 0.34,
+	medium: 0.46,
+	high: 0.2
+}
+const HEALTH_GROUPS = {
+	healthy: 0.75,
+	mentalFragile: 0.09,
+	physicalFragile: 0.11,
+	dualFragile: 0.05
+}
 const AGE_GROUPS = {
 	age0To17: {
 		durationYears: 18,
@@ -55,6 +71,22 @@ const populationState = {
 			comfortableIncome: INCOME_LEVEL_GROUPS.comfortableIncome,
 			highIncome: INCOME_LEVEL_GROUPS.highIncome
 		},
+		authorityRelation: {
+			supportive: AUTHORITY_RELATION_GROUPS.supportive,
+			neutral: AUTHORITY_RELATION_GROUPS.neutral,
+			defiant: AUTHORITY_RELATION_GROUPS.defiant
+		},
+		education: {
+			low: EDUCATION_GROUPS.low,
+			medium: EDUCATION_GROUPS.medium,
+			high: EDUCATION_GROUPS.high
+		},
+		health: {
+			healthy: HEALTH_GROUPS.healthy,
+			mentalFragile: HEALTH_GROUPS.mentalFragile,
+			physicalFragile: HEALTH_GROUPS.physicalFragile,
+			dualFragile: HEALTH_GROUPS.dualFragile
+		},
 		sex: {
 			female: 0.5,
 			male: 0.5
@@ -90,6 +122,22 @@ function createInitialPopulation(){
 				middleIncome: INCOME_LEVEL_GROUPS.middleIncome,
 				comfortableIncome: INCOME_LEVEL_GROUPS.comfortableIncome,
 				highIncome: INCOME_LEVEL_GROUPS.highIncome
+			},
+			authorityRelation: {
+				supportive: AUTHORITY_RELATION_GROUPS.supportive,
+				neutral: AUTHORITY_RELATION_GROUPS.neutral,
+				defiant: AUTHORITY_RELATION_GROUPS.defiant
+			},
+			education: {
+				low: EDUCATION_GROUPS.low,
+				medium: EDUCATION_GROUPS.medium,
+				high: EDUCATION_GROUPS.high
+			},
+			health: {
+				healthy: HEALTH_GROUPS.healthy,
+				mentalFragile: HEALTH_GROUPS.mentalFragile,
+				physicalFragile: HEALTH_GROUPS.physicalFragile,
+				dualFragile: HEALTH_GROUPS.dualFragile
 			},
 			sex: {
 				female: 0.5,
@@ -176,6 +224,29 @@ function buildIncomeLevelCounts(){
 	return roundedCounts
 }
 
+function buildGroupedCounts(shares){
+	const groupIds = Object.keys(shares)
+	const rawCounts = groupIds.reduce((counts, groupId) => {
+		counts[groupId] = populationState.total * shares[groupId]
+		return counts
+	}, {})
+	const roundedCounts = {}
+	let assignedPopulation = 0
+
+	groupIds.forEach((groupId, index) => {
+		if (index === groupIds.length - 1) {
+			roundedCounts[groupId] = Math.max(0, populationState.total - assignedPopulation)
+			return
+		}
+
+		const roundedCount = Math.max(0, Math.round(rawCounts[groupId]))
+		roundedCounts[groupId] = roundedCount
+		assignedPopulation += roundedCount
+	})
+
+	return roundedCounts
+}
+
 function normalizeSexShares(femaleShare){
 	const nextFemaleShare = clamp(femaleShare, 0.5 - FEMALE_SHARE_OSCILLATION_RANGE, 0.5 + FEMALE_SHARE_OSCILLATION_RANGE)
 	return {
@@ -209,6 +280,27 @@ function normalizeIncomeLevelShares(incomeLevelShares){
 
 	return incomeLevelIds.reduce((shares, incomeLevelId) => {
 		shares[incomeLevelId] = sanitizedShares[incomeLevelId] / totalShare
+		return shares
+	}, {})
+}
+
+function normalizeGroupedShares(groupShares, defaultShares){
+	const groupIds = Object.keys(defaultShares)
+	const sanitizedShares = groupIds.reduce((shares, groupId) => {
+		shares[groupId] = Math.max(0, Number(groupShares?.[groupId]) || 0)
+		return shares
+	}, {})
+	const totalShare = groupIds.reduce((sum, groupId) => sum + sanitizedShares[groupId], 0)
+
+	if (totalShare <= 0) {
+		return groupIds.reduce((shares, groupId) => {
+			shares[groupId] = defaultShares[groupId]
+			return shares
+		}, {})
+	}
+
+	return groupIds.reduce((shares, groupId) => {
+		shares[groupId] = sanitizedShares[groupId] / totalShare
 		return shares
 	}, {})
 }
@@ -336,6 +428,39 @@ function resolveSavedIncomeLevelShares(savedPopulation){
 	return buildIncomeLevelSharesFromCounts(savedPopulation) || normalizeIncomeLevelShares()
 }
 
+function buildGroupedSharesFromCounts(savedPopulation, groupKey, defaultShares){
+	const savedGroups = savedPopulation?.[groupKey] || {}
+	const totalPopulation = Number(savedPopulation?.total) || 0
+	const groupCounts = Object.keys(defaultShares).reduce((counts, groupId) => {
+		counts[groupId] = Math.max(0, Number(savedGroups?.[groupId]) || 0)
+		return counts
+	}, {})
+	const totalFromCounts = Object.values(groupCounts).reduce((sum, value) => sum + value, 0)
+	const referenceTotal = totalPopulation > 0 ? totalPopulation : totalFromCounts
+
+	if (referenceTotal <= 0) {
+		return null
+	}
+
+	return normalizeGroupedShares(
+		Object.entries(groupCounts).reduce((shares, [groupId, count]) => {
+			shares[groupId] = count / referenceTotal
+			return shares
+		}, {}),
+		defaultShares
+	)
+}
+
+function resolveSavedGroupedShares(savedPopulation, groupKey, defaultShares){
+	const savedShares = savedPopulation?.demographics?.[groupKey]
+
+	if (savedShares && Object.keys(savedShares).length > 0) {
+		return normalizeGroupedShares(savedShares, defaultShares)
+	}
+
+	return buildGroupedSharesFromCounts(savedPopulation, groupKey, defaultShares) || normalizeGroupedShares(null, defaultShares)
+}
+
 function notifyPopulationListeners(){
 	const snapshot = buildPopulationSnapshot()
 	populationListeners.forEach((listener) => {
@@ -451,6 +576,9 @@ function resetPopulation(){
 		age: { ...nextPopulation.demographics.age },
 		activity: { ...nextPopulation.demographics.activity },
 		incomeLevel: { ...nextPopulation.demographics.incomeLevel },
+		authorityRelation: { ...nextPopulation.demographics.authorityRelation },
+		education: { ...nextPopulation.demographics.education },
+		health: { ...nextPopulation.demographics.health },
 		sex: { ...nextPopulation.demographics.sex }
 	}
 	populationState.trend = { ...nextPopulation.trend }
@@ -471,6 +599,9 @@ function restorePopulation(save){
 		age: resolveSavedAgeShares(savedPopulation),
 		activity: normalizeActivityShares(resolveSavedWorkerShare(savedPopulation)),
 		incomeLevel: resolveSavedIncomeLevelShares(savedPopulation),
+		authorityRelation: resolveSavedGroupedShares(savedPopulation, 'authorityRelation', AUTHORITY_RELATION_GROUPS),
+		education: resolveSavedGroupedShares(savedPopulation, 'education', EDUCATION_GROUPS),
+		health: resolveSavedGroupedShares(savedPopulation, 'health', HEALTH_GROUPS),
 		sex: normalizeSexShares(resolveSavedFemaleShare(savedPopulation))
 	}
 	populationState.trend = {
@@ -489,9 +620,12 @@ function buildPopulationSnapshot(){
 	const ageCounts = buildAgeCounts()
 	const activityCounts = buildActivityCounts()
 	const incomeLevelCounts = buildIncomeLevelCounts()
+	const authorityRelationCounts = buildGroupedCounts(populationState.demographics.authorityRelation)
+	const educationCounts = buildGroupedCounts(populationState.demographics.education)
+	const healthCounts = buildGroupedCounts(populationState.demographics.health)
 	const sexCounts = buildSexCounts()
 	return {
-		version: 4,
+		version: 5,
 		total: populationState.total,
 		satisfaction: populationState.satisfaction,
 		demographics: {
@@ -511,6 +645,22 @@ function buildPopulationSnapshot(){
 				middleIncome: populationState.demographics.incomeLevel.middleIncome,
 				comfortableIncome: populationState.demographics.incomeLevel.comfortableIncome,
 				highIncome: populationState.demographics.incomeLevel.highIncome
+			},
+			authorityRelation: {
+				supportive: populationState.demographics.authorityRelation.supportive,
+				neutral: populationState.demographics.authorityRelation.neutral,
+				defiant: populationState.demographics.authorityRelation.defiant
+			},
+			education: {
+				low: populationState.demographics.education.low,
+				medium: populationState.demographics.education.medium,
+				high: populationState.demographics.education.high
+			},
+			health: {
+				healthy: populationState.demographics.health.healthy,
+				mentalFragile: populationState.demographics.health.mentalFragile,
+				physicalFragile: populationState.demographics.health.physicalFragile,
+				dualFragile: populationState.demographics.health.dualFragile
 			},
 			sex: {
 				female: populationState.demographics.sex.female,
@@ -533,6 +683,22 @@ function buildPopulationSnapshot(){
 			middleIncome: incomeLevelCounts.middleIncome,
 			comfortableIncome: incomeLevelCounts.comfortableIncome,
 			highIncome: incomeLevelCounts.highIncome
+		},
+		authorityRelation: {
+			supportive: authorityRelationCounts.supportive,
+			neutral: authorityRelationCounts.neutral,
+			defiant: authorityRelationCounts.defiant
+		},
+		education: {
+			low: educationCounts.low,
+			medium: educationCounts.medium,
+			high: educationCounts.high
+		},
+		health: {
+			healthy: healthCounts.healthy,
+			mentalFragile: healthCounts.mentalFragile,
+			physicalFragile: healthCounts.physicalFragile,
+			dualFragile: healthCounts.dualFragile
 		},
 		sex: {
 			female: sexCounts.female,

@@ -74,6 +74,18 @@ const translations = {
 			autoVoteMissingSelection: "Sélectionnez d'abord un vote manuel.",
 			autoVoteUnlockNotice: 'Débloqué après 3 votes IA réguliers.'
 		},
+		universalLaws: {
+			title: 'Lois universelles',
+			laws: {
+				mandatoryVote: {
+					name: 'Vote obligatoire',
+					effect: "Les humains éligibles sont tenus de participer au scrutin.",
+					sanctions: {
+						fine: 'Amende'
+					}
+				}
+			}
+		},
 		chapter: {
 			title: 'Lorem Ipsum'
 		}
@@ -152,6 +164,18 @@ const translations = {
 			autoVoteIdle: 'Automatically repeats the last vote as soon as it becomes available again.',
 			autoVoteMissingSelection: 'Select a manual vote first.',
 			autoVoteUnlockNotice: 'Unlocked after 3 regular AI votes.'
+		},
+		universalLaws: {
+			title: 'Universal Laws',
+			laws: {
+				mandatoryVote: {
+					name: 'Mandatory voting',
+					effect: 'Eligible humans are required to participate in the vote.',
+					sanctions: {
+						fine: 'Fine'
+					}
+				}
+			}
 		},
 		chapter: {
 			title: 'Lorem Ipsum'
