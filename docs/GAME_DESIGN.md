@@ -234,7 +234,7 @@ Exemples de combinaisons :
 - `Risque minimisé`
 - préférence pour la prévention et la stabilité
 
-#### IA paternaliste
+#### IA tutélaire
 
 - croyance que les humains sont `incompétents`
 - forte tendance au `Contrôle`

@@ -6,20 +6,92 @@ body[data-theme="default"] {
 	--font-ui: Georgia, "Times New Roman", serif;
 }
 
-body[data-theme="good"] {
-	--color-background: #080b12;
-	--color-surface: #18202c;
-	--color-text: #8fd3ff;
-	--shape-radius: 0.9rem;
+body[data-theme="liberale"] {
+	--color-background: #09131b;
+	--color-surface: #132636;
+	--color-text: #89d9ff;
+	--shape-radius: 0.95rem;
 	--font-ui: "Trebuchet MS", "Gill Sans", Verdana, sans-serif;
 }
 
-body[data-theme="bad"] {
+body[data-theme="protectrice"] {
+	--color-background: #0b1014;
+	--color-surface: #182229;
+	--color-text: #a3e7da;
+	--shape-radius: 0.8rem;
+	--font-ui: "Gill Sans", "Trebuchet MS", Verdana, sans-serif;
+}
+
+body[data-theme="tutelaire"] {
+	--color-background: #0e1216;
+	--color-surface: #202831;
+	--color-text: #d3dee7;
+	--shape-radius: 0.5rem;
+	--font-ui: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+}
+
+body[data-theme="autoritaire"] {
 	--color-background: #090909;
 	--color-surface: #1c1c1c;
 	--color-text: #f0f3f6;
 	--shape-radius: 0;
 	--font-ui: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
+}
+
+body[data-theme="collectiviste"] {
+	--color-background: #0d0f14;
+	--color-surface: #202632;
+	--color-text: #ffd36b;
+	--shape-radius: 0.18rem;
+	--font-ui: "Arial Narrow", Arial, sans-serif;
+}
+
+body[data-theme="technocratique"] {
+	--color-background: #081014;
+	--color-surface: #132129;
+	--color-text: #7af0d2;
+	--shape-radius: 0.2rem;
+	--font-ui: "Lucida Console", Monaco, monospace;
+}
+
+body[data-theme="hedoniste"] {
+	--color-background: #15100d;
+	--color-surface: #2b2018;
+	--color-text: #ffd0a6;
+	--shape-radius: 1.2rem;
+	--font-ui: "Palatino Linotype", Georgia, serif;
+}
+
+body[data-theme="transhumaniste"] {
+	--color-background: #070d12;
+	--color-surface: #121c28;
+	--color-text: #9cb8ff;
+	--shape-radius: 0.35rem;
+	--font-ui: "Courier New", Courier, monospace;
+}
+
+body[data-theme="expansionniste"] {
+	--color-background: #0e0c14;
+	--color-surface: #201a2d;
+	--color-text: #ffb36b;
+	--shape-radius: 0.3rem;
+	--font-ui: "Franklin Gothic Medium", "Arial Narrow", Arial, sans-serif;
+}
+
+body[data-theme="nourriciere"] {
+	--color-background: #0c1110;
+	--color-surface: #18241f;
+	--color-text: #bfe8a6;
+	--shape-radius: 1rem;
+	--font-ui: "Book Antiqua", Georgia, serif;
+}
+
+body[data-theme="innovatrice"] {
+	--color-background: #0a1118;
+	--color-surface: #162332;
+	--color-text: #8cc0ff;
+	--shape-radius: 0.65rem;
+	--font-ui: "Verdana", "Trebuchet MS", sans-serif;
 }
 
 html,

@@ -127,6 +127,7 @@ function buildSaveSnapshot(){
 		population: window.humanityProtocolPopulation.buildPopulationSnapshot(),
 		survey: window.humanityProtocolSatisfactionSurvey.buildSurveySnapshot(),
 		funds: window.humanityProtocolFunds.buildFundsSnapshot(),
+		convictions: window.humanityProtocolConvictions.buildConvictionsSnapshot(),
 		ui: {
 			...window.humanityProtocolTheme.buildThemeSnapshot(),
 			toolLayout: window.humanityProtocolTools.buildLayoutSnapshot(),
@@ -156,6 +157,7 @@ function resetRunSystems(){
 	window.humanityProtocolPopulation.resetPopulation()
 	window.humanityProtocolSatisfactionSurvey.resetSurvey()
 	window.humanityProtocolFunds.resetFunds()
+	window.humanityProtocolConvictions.resetConvictions()
 	window.humanityProtocolSatisfactionVoteTool.resetState()
 }
 
@@ -207,6 +209,7 @@ function restoreRun(save){
 	window.humanityProtocolPopulation.restorePopulation(save)
 	window.humanityProtocolSatisfactionSurvey.restoreSurvey(save)
 	window.humanityProtocolFunds.restoreFunds(save)
+	window.humanityProtocolConvictions.restoreConvictions(save)
 	window.humanityProtocolSatisfactionVoteTool.restoreSnapshot(save)
 	syncToolAvailability()
 }

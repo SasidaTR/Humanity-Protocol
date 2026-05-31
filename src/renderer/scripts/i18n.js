@@ -37,6 +37,20 @@ const translations = {
 			tools: 'Outils',
 			back: 'Retour au menu'
 		},
+		themes: {
+			default: 'Default',
+			liberale: 'Libérale',
+			protectrice: 'Protectrice',
+			tutelaire: 'Tutélaire',
+			autoritaire: 'Autoritaire',
+			collectiviste: 'Collectiviste',
+			technocratique: 'Technocratique',
+			hedoniste: 'Hédoniste',
+			transhumaniste: 'Transhumaniste',
+			expansionniste: 'Expansionniste',
+			nourriciere: 'Nourricière',
+			innovatrice: 'Innovatrice'
+		},
 		world: {
 			funds: 'Fonds disponibles',
 			population: 'Population mondiale',
@@ -95,6 +109,20 @@ const translations = {
 			theme: 'Theme',
 			tools: 'Tools',
 			back: 'Back to menu'
+		},
+		themes: {
+			default: 'Default',
+			liberale: 'Liberal',
+			protectrice: 'Protective',
+			tutelaire: 'Tutelary',
+			autoritaire: 'Authoritarian',
+			collectiviste: 'Collectivist',
+			technocratique: 'Technocratic',
+			hedoniste: 'Hedonistic',
+			transhumaniste: 'Transhumanist',
+			expansionniste: 'Expansionist',
+			nourriciere: 'Nurturing',
+			innovatrice: 'Innovative'
 		},
 		world: {
 			funds: 'Available funds',

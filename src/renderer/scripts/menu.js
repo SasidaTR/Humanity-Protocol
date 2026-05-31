@@ -107,12 +107,13 @@ function getDebugSettings(){
 
 function syncDebugControls(){
 	const debugSettings = getDebugSettings()
+	const language = getCurrentLanguage()
 	debugThemeSelect.innerHTML = ''
 
 	window.humanityProtocolTheme.themes.forEach((themeName) => {
 		const option = document.createElement('option')
 		option.value = themeName
-		option.textContent = themeName
+		option.textContent = window.humanityProtocolTheme.getThemeLabel(themeName, language)
 		debugThemeSelect.append(option)
 	})
 
@@ -377,6 +378,8 @@ languageSelect.addEventListener('change', async () => {
 	if (gameState.currentScreen === 'menu' && gameState.menuView === 'load') {
 		renderSaveList()
 	}
+
+	syncDebugControls()
 
 	gameState.settings = settings
 })

@@ -44,7 +44,9 @@ Les règles de temps et d'évolution du monde restent en cours d'itération. Le 
 ## Documents de référence
 
 - `AGENTS.md` : résumé opérationnel à lire au début d'une session
-- `GAME_DESIGN.md` : vision de jeu, intentions, mécaniques, thèmes, outils et pistes de design
+- `docs/GAME_DESIGN.md` : vision de jeu, intentions, mécaniques, thèmes, outils et pistes de design
+- `docs/TOOLS.md` : cadre général du système d'outils
+- `docs/tools/` : fiches détaillées des outils
 
 ## Lancer le projet
 
