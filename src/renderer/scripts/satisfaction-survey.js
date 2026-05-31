@@ -1,5 +1,7 @@
 const INITIAL_TURNOUT_RATE = 0.62
 const INITIAL_WORLD_SATISFACTION = 60
+const ACTIVE_VOTE_DURATION_HOURS = 24
+const INITIAL_ACTIVE_VOTE_GROUPS = 12
 const TURNOUT_RATE_RANGE = {
 	min: 0.3,
 	max: 0.95
@@ -100,6 +102,128 @@ function getRandomCohortVoteHours(){
 	const weightedValue = randomValue * randomValue
 
 	return COHORT_VOTE_INTERVAL_HOURS.min + (weightedValue * (COHORT_VOTE_INTERVAL_HOURS.max - COHORT_VOTE_INTERVAL_HOURS.min))
+}
+
+function createVoteGroup(remainingHours, votes, satisfiedVotes){
+	return {
+		remainingHours: Math.max(0, Number(remainingHours) || 0),
+		votes: Math.max(0, Math.round(Number(votes) || 0)),
+		satisfiedVotes: Math.max(0, Math.round(Number(satisfiedVotes) || 0))
+	}
+}
+
+function buildSeedVoteGroups(totalVotes, satisfactionRate){
+	const boundedTotalVotes = Math.max(0, Math.round(Number(totalVotes) || 0))
+
+	if (boundedTotalVotes <= 0) {
+		return []
+	}
+
+	const groupCount = Math.min(INITIAL_ACTIVE_VOTE_GROUPS, boundedTotalVotes)
+	const baseVotesPerGroup = Math.floor(boundedTotalVotes / groupCount)
+	const extraVotes = boundedTotalVotes % groupCount
+	const groups = []
+	let assignedVotes = 0
+	let assignedSatisfiedVotes = 0
+
+	for (let groupIndex = 0; groupIndex < groupCount; groupIndex += 1) {
+		const votes = baseVotesPerGroup + (groupIndex < extraVotes ? 1 : 0)
+		const remainingHours = ACTIVE_VOTE_DURATION_HOURS * ((groupIndex + 1) / groupCount)
+		const targetSatisfiedVotes = Math.round(votes * satisfactionRate)
+		const remainingVotes = boundedTotalVotes - assignedVotes
+		const remainingSatisfiedVotes = Math.max(0, Math.round((boundedTotalVotes * satisfactionRate) - assignedSatisfiedVotes))
+		const satisfiedVotes = groupIndex === groupCount - 1
+			? Math.min(votes, remainingSatisfiedVotes)
+			: Math.min(votes, Math.max(0, targetSatisfiedVotes))
+
+		groups.push(createVoteGroup(remainingHours, votes, satisfiedVotes))
+		assignedVotes += votes
+		assignedSatisfiedVotes += satisfiedVotes
+	}
+
+	return groups
+}
+
+function sanitizeVoteGroups(voteGroups = []){
+	if (!Array.isArray(voteGroups)) {
+		return []
+	}
+
+	return voteGroups.reduce((sanitizedGroups, voteGroup) => {
+		const normalizedGroup = createVoteGroup(
+			voteGroup?.remainingHours,
+			voteGroup?.votes,
+			Math.min(Number(voteGroup?.votes) || 0, Number(voteGroup?.satisfiedVotes) || 0)
+		)
+
+		if (normalizedGroup.votes <= 0 || normalizedGroup.remainingHours <= 0) {
+			return sanitizedGroups
+		}
+
+		sanitizedGroups.push(normalizedGroup)
+		return sanitizedGroups
+	}, [])
+}
+
+function summarizeVoteGroups(voteGroups = []){
+	return voteGroups.reduce((summary, voteGroup) => {
+		summary.totalVotes += voteGroup.votes
+		summary.satisfiedVotes += Math.min(voteGroup.votes, voteGroup.satisfiedVotes)
+		return summary
+	}, {
+		totalVotes: 0,
+		satisfiedVotes: 0
+	})
+}
+
+function advanceVoteGroups(voteGroups = [], elapsedHours = 0){
+	if (!Number.isFinite(elapsedHours) || elapsedHours <= 0) {
+		return sanitizeVoteGroups(voteGroups)
+	}
+
+	return sanitizeVoteGroups(
+		voteGroups.map((voteGroup) => createVoteGroup(
+			voteGroup.remainingHours - elapsedHours,
+			voteGroup.votes,
+			voteGroup.satisfiedVotes
+		))
+	)
+}
+
+function appendVoteGroup(voteGroups, votes, satisfactionRate){
+	const boundedVotes = Math.max(0, Math.round(Number(votes) || 0))
+
+	if (boundedVotes <= 0) {
+		return voteGroups
+	}
+
+	const satisfiedVotes = Math.min(
+		boundedVotes,
+		Math.max(0, Math.round(boundedVotes * clamp(satisfactionRate, 0, 1)))
+	)
+
+	return [
+		...voteGroups,
+		createVoteGroup(ACTIVE_VOTE_DURATION_HOURS, boundedVotes, satisfiedVotes)
+	]
+}
+
+function limitVoteGroupsToPopulation(voteGroups, population){
+	const boundedPopulation = Math.max(0, Math.round(Number(population) || 0))
+	const voteSummary = summarizeVoteGroups(voteGroups)
+
+	if (voteSummary.totalVotes <= boundedPopulation) {
+		return voteGroups
+	}
+
+	const scale = boundedPopulation / Math.max(1, voteSummary.totalVotes)
+	return sanitizeVoteGroups(
+		voteGroups.map((voteGroup) => createVoteGroup(
+			voteGroup.remainingHours,
+			Math.round(voteGroup.votes * scale),
+			Math.round(voteGroup.satisfiedVotes * scale)
+		))
+	)
 }
 
 function getPopulationIncomeShares(populationSnapshot){
@@ -228,27 +352,40 @@ function createCohortState(target){
 			SATISFACTION_RATE_RANGE.min,
 			SATISFACTION_RATE_RANGE.max
 		),
-		hoursUntilRefresh: getRandomCohortVoteHours()
+		hoursUntilRefresh: getRandomCohortVoteHours(),
+		activeVoteGroups: []
 	}
 }
 
-function advanceCohortState(cohortState, target, elapsedHours){
-	if (!Number.isFinite(elapsedHours) || elapsedHours <= 0) {
-		return cohortState
+function reconcileCohortState(cohortState, target, population, elapsedHours){
+	const nextCohortState = {
+		turnoutRate: clamp(Number(cohortState?.turnoutRate) || target.turnoutRate, TURNOUT_RATE_RANGE.min, TURNOUT_RATE_RANGE.max),
+		satisfactionRate: clamp(Number(cohortState?.satisfactionRate) || target.satisfactionRate, SATISFACTION_RATE_RANGE.min, SATISFACTION_RATE_RANGE.max),
+		hoursUntilRefresh: Math.max(0, Number(cohortState?.hoursUntilRefresh) || getRandomCohortVoteHours()),
+		activeVoteGroups: sanitizeVoteGroups(cohortState?.activeVoteGroups)
 	}
 
-	let hoursUntilRefresh = cohortState.hoursUntilRefresh - elapsedHours
+	if (nextCohortState.activeVoteGroups.length === 0) {
+		nextCohortState.activeVoteGroups = buildSeedVoteGroups(
+			Math.round(Math.max(0, population) * nextCohortState.turnoutRate),
+			nextCohortState.satisfactionRate
+		)
+	}
+
+	nextCohortState.activeVoteGroups = advanceVoteGroups(nextCohortState.activeVoteGroups, elapsedHours)
+	nextCohortState.activeVoteGroups = limitVoteGroupsToPopulation(nextCohortState.activeVoteGroups, population)
+	let hoursUntilRefresh = nextCohortState.hoursUntilRefresh - Math.max(0, Number(elapsedHours) || 0)
 
 	while (hoursUntilRefresh <= 0) {
-		cohortState.turnoutRate = clamp(
-			(cohortState.turnoutRate * 0.4) +
+		nextCohortState.turnoutRate = clamp(
+			(nextCohortState.turnoutRate * 0.4) +
 			(target.turnoutRate * 0.6) +
 			((Math.random() - 0.5) * OPINION_NOISE.turnoutRate),
 			TURNOUT_RATE_RANGE.min,
 			TURNOUT_RATE_RANGE.max
 		)
-		cohortState.satisfactionRate = clamp(
-			(cohortState.satisfactionRate * 0.35) +
+		nextCohortState.satisfactionRate = clamp(
+			(nextCohortState.satisfactionRate * 0.35) +
 			(target.satisfactionRate * 0.65) +
 			((Math.random() - 0.5) * getCohortSatisfactionNoise(target.satisfactionRate)),
 			SATISFACTION_RATE_RANGE.min,
@@ -257,20 +394,41 @@ function advanceCohortState(cohortState, target, elapsedHours){
 		hoursUntilRefresh += getRandomCohortVoteHours()
 	}
 
-	cohortState.hoursUntilRefresh = hoursUntilRefresh
-	return cohortState
+	nextCohortState.hoursUntilRefresh = hoursUntilRefresh
+
+	const voteSummary = summarizeVoteGroups(nextCohortState.activeVoteGroups)
+	const targetActiveVotes = Math.round(Math.max(0, population) * nextCohortState.turnoutRate)
+	const additionalVotes = Math.max(0, Math.min(
+		Math.max(0, Math.round(population) - voteSummary.totalVotes),
+		targetActiveVotes - voteSummary.totalVotes
+	))
+
+	if (additionalVotes > 0) {
+		nextCohortState.activeVoteGroups = appendVoteGroup(
+			nextCohortState.activeVoteGroups,
+			additionalVotes,
+			nextCohortState.satisfactionRate
+		)
+	}
+
+	return nextCohortState
 }
 
 function buildSurveySnapshot(){
-	const totalVotes = surveyState.satisfiedVotes + surveyState.dissatisfiedVotes
+	const aiVote = window.humanityProtocolSatisfactionVoteTool?.getActiveVote?.()
+	const aiSatisfiedVotes = aiVote === 'positive' ? 1 : 0
+	const aiDissatisfiedVotes = aiVote === 'negative' ? 1 : 0
+	const satisfiedVotes = surveyState.satisfiedVotes + aiSatisfiedVotes
+	const dissatisfiedVotes = surveyState.dissatisfiedVotes + aiDissatisfiedVotes
+	const totalVotes = satisfiedVotes + dissatisfiedVotes
 	const satisfaction = totalVotes > 0
-		? roundPercentage((surveyState.satisfiedVotes / totalVotes) * 100)
+		? roundPercentage((satisfiedVotes / totalVotes) * 100)
 		: INITIAL_WORLD_SATISFACTION
 
 	return {
-		version: 2,
-		satisfiedVotes: surveyState.satisfiedVotes,
-		dissatisfiedVotes: surveyState.dissatisfiedVotes,
+		version: 3,
+		satisfiedVotes,
+		dissatisfiedVotes,
 		totalVotes,
 		nonVoters: surveyState.nonVoters,
 		eligibleVoters: surveyState.eligibleVoters,
@@ -278,6 +436,7 @@ function buildSurveySnapshot(){
 		turnoutRate: roundPercentage(surveyState.turnoutRate * 100),
 		satisfaction,
 		voteWindowHours: surveyState.voteWindowHours,
+		maxCohortVoteIntervalHours: COHORT_VOTE_INTERVAL_HOURS.max,
 		lastUpdatedAt: surveyState.lastUpdatedAt,
 		cohorts: surveyState.cohorts
 	}
@@ -316,16 +475,14 @@ function applyPopulationSnapshot(populationSnapshot, elapsedHours = 0){
 
 	cohorts.forEach((cohort) => {
 		const target = buildCohortTarget(cohort, baselineSatisfaction)
-		const cohortState = surveyState.cohorts[cohort.id]
-			? advanceCohortState({ ...surveyState.cohorts[cohort.id] }, target, elapsedHours)
-			: createCohortState(target)
+		const baseCohortState = surveyState.cohorts[cohort.id] || createCohortState(target)
 		const population = Math.max(0, cohort.population)
-		const votes = Math.round(population * cohortState.turnoutRate)
-		const satisfied = Math.round(votes * cohortState.satisfactionRate)
+		const cohortState = reconcileCohortState(baseCohortState, target, population, elapsedHours)
+		const voteSummary = summarizeVoteGroups(cohortState.activeVoteGroups)
 
 		nextCohorts[cohort.id] = cohortState
-		satisfiedVotes += satisfied
-		totalVotes += votes
+		satisfiedVotes += voteSummary.satisfiedVotes
+		totalVotes += voteSummary.totalVotes
 	})
 
 	const boundedTotalVotes = Math.min(eligibleVoters, totalVotes)
@@ -338,7 +495,7 @@ function applyPopulationSnapshot(populationSnapshot, elapsedHours = 0){
 	surveyState.dissatisfiedVotes = Math.max(0, boundedTotalVotes - boundedSatisfiedVotes)
 	surveyState.nonVoters = Math.max(0, totalPopulation - boundedTotalVotes)
 	surveyState.turnoutRate = eligibleVoters > 0
-		? clamp(boundedTotalVotes / eligibleVoters, TURNOUT_RATE_RANGE.min, TURNOUT_RATE_RANGE.max)
+		? clamp(boundedTotalVotes / eligibleVoters, 0, 1)
 		: INITIAL_TURNOUT_RATE
 	surveyState.lastUpdatedAt = Date.now()
 
@@ -377,7 +534,8 @@ function restoreSurvey(save){
 		cohorts[cohortId] = {
 			turnoutRate: clamp(Number(cohortState?.turnoutRate) || INITIAL_TURNOUT_RATE, TURNOUT_RATE_RANGE.min, TURNOUT_RATE_RANGE.max),
 			satisfactionRate: clamp(Number(cohortState?.satisfactionRate) || (INITIAL_WORLD_SATISFACTION / 100), SATISFACTION_RATE_RANGE.min, SATISFACTION_RATE_RANGE.max),
-			hoursUntilRefresh: Math.max(0, Number(cohortState?.hoursUntilRefresh) || getRandomCohortVoteHours())
+			hoursUntilRefresh: Math.max(0, Number(cohortState?.hoursUntilRefresh) || getRandomCohortVoteHours()),
+			activeVoteGroups: sanitizeVoteGroups(cohortState?.activeVoteGroups)
 		}
 		return cohorts
 	}, {})

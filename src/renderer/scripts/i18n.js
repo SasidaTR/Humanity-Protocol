@@ -66,7 +66,13 @@ const translations = {
 			positiveHelper: 'Ma situation me convient actuellement.',
 			negative: 'Insatisfait',
 			negativeHelper: 'Ma situation devrait être améliorée.',
-			footnote: 'Une seule réponse est prise en compte pendant la période de consultation.'
+			footnote: 'Une seule réponse est prise en compte pendant la période de consultation.',
+			autoVoteEnable: "Activer l'automatisme",
+			autoVoteDisable: "Désactiver l'automatisme",
+			autoVoteLocked: 'Automatisme verrouillé',
+			autoVoteIdle: 'Reproduit automatiquement le dernier vote dès qu’il redevient disponible.',
+			autoVoteMissingSelection: "Sélectionnez d'abord un vote manuel.",
+			autoVoteUnlockNotice: 'Débloqué après 3 votes IA réguliers.'
 		},
 		chapter: {
 			title: 'Lorem Ipsum'
@@ -139,7 +145,13 @@ const translations = {
 			positiveHelper: 'My current situation is acceptable.',
 			negative: 'Dissatisfied',
 			negativeHelper: 'My current situation should be improved.',
-			footnote: 'Only one response is counted during the consultation period.'
+			footnote: 'Only one response is counted during the consultation period.',
+			autoVoteEnable: 'Enable automation',
+			autoVoteDisable: 'Disable automation',
+			autoVoteLocked: 'Automation locked',
+			autoVoteIdle: 'Automatically repeats the last vote as soon as it becomes available again.',
+			autoVoteMissingSelection: 'Select a manual vote first.',
+			autoVoteUnlockNotice: 'Unlocked after 3 regular AI votes.'
 		},
 		chapter: {
 			title: 'Lorem Ipsum'

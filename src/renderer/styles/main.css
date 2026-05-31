@@ -332,6 +332,8 @@ select:focus-visible {
 
 .satisfaction-vote-panel {
 	min-width: 18rem;
+	display: grid;
+	gap: 0.75rem;
 }
 
 .satisfaction-vote-card {
@@ -394,6 +396,51 @@ select:focus-visible {
 	display: grid;
 	grid-template-columns: repeat(2, minmax(0, 1fr));
 	gap: 0.85rem;
+}
+
+.satisfaction-vote-automation {
+	display: grid;
+	gap: 0.45rem;
+	padding: 0.7rem;
+	background: color-mix(in srgb, var(--color-surface) 88%, transparent);
+	border: 1px solid color-mix(in srgb, var(--color-text) 18%, transparent);
+	border-radius: var(--shape-radius);
+	box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-text) 8%, transparent);
+}
+
+.satisfaction-vote-automation[hidden] {
+	display: none;
+}
+
+.satisfaction-vote-automation-button {
+	width: 100%;
+	padding: 0.8rem 0.9rem;
+	border-color: color-mix(in srgb, var(--color-text) 20%, transparent);
+	background: color-mix(in srgb, var(--color-background) 35%, var(--color-surface));
+	color: var(--color-text);
+	text-align: left;
+}
+
+.satisfaction-vote-automation-button:hover {
+	border-color: color-mix(in srgb, var(--color-text) 38%, transparent);
+}
+
+.satisfaction-vote-automation-button.is-enabled {
+	border-color: color-mix(in srgb, var(--color-text) 52%, transparent);
+	background: color-mix(in srgb, var(--color-surface) 72%, var(--color-text) 8%);
+	box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-text) 16%, transparent);
+}
+
+.satisfaction-vote-automation-button:disabled {
+	cursor: default;
+	opacity: 0.72;
+}
+
+.satisfaction-vote-automation-note {
+	margin: 0;
+	font-size: 0.72rem;
+	line-height: 1.4;
+	color: color-mix(in srgb, var(--color-text) 68%, transparent);
 }
 
 .satisfaction-vote-button {

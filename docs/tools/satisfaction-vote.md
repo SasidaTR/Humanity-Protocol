@@ -19,10 +19,15 @@
 - seuls les humains adultes participent au vote
 - tous les humains éligibles ne votent pas
 - calcul par cohortes adultes
-- chaque cohorte vote selon son propre rythme
-- intervalle de vote par cohorte : `24` à `72` heures
-- taux de participation global borné entre `30%` et `95%`
-- fenêtre de validité du vote humain : `24` heures
+- cycle de vote de référence :
+  - durée maximale du vote humain courant
+  - par défaut : `72` heures
+  - peut être réduit plus tard par d'autres outils ou règles
+- chaque cohorte conserve des votes actifs pendant `24` heures
+- les votes actifs expirent puis rendent leurs porteurs à nouveau éligibles
+- chaque cohorte ajuste son rythme et ses tendances sur des cycles de `24` à `72` heures
+- taux de participation cible par cohorte borné entre `30%` et `95%`
+- fenêtre de validité d'un vote humain : `24` heures
 - votes calculés :
   - `satisfiedVotes`
   - `dissatisfiedVotes`
@@ -50,13 +55,15 @@
   - calcul par cohortes adultes
   - seuls les `18+` votent
   - participation partielle des humains éligibles
+  - votes humains agrégés par groupes actifs avec expiration
   - `nonVoters = population totale - totalVotes`
   - `eligibleVoters = population totale - population 0-17`
-  - aucune action directe sur la population sans évolution d'influence
 - Temporalité :
   - calée sur le rythme réel du vote humain
   - fenêtre de vote : `24` heures
-  - mise à jour des cohortes sur des cycles de `24` à `72` heures
+  - expiration des votes actifs après `24` heures
+  - mise à jour des tendances de cohorte sur des cycles de `24` à `72` heures
+  - cycle de référence actuel pour les rétrogradations : `72` heures
 
 ### Évolutions actuelles
 
@@ -69,49 +76,62 @@
   - ou cliquer `3` fois sur `Insatisfait`
 - Effet :
   - l'IA débloque la capacité d'ajouter son propre vote au scrutin
-  - l'outil n'est plus seulement observé, il peut être orienté par le joueur
+  - le vote de l'IA compte comme `1` voix ajoutée au total humain
 - Paliers :
   - aucun
 - Maintien :
-  - le vote de l'IA suit les mêmes lois qu'un vote humain
-  - une fois exprimé, il reste valable pendant `24` heures
-  - quand ce temps est écoulé, le vote n'est plus actif
+  - une fois exprimé, le vote de l'IA reste actif pendant `24` heures
+  - tant qu'il est actif, il s'ajoute à `satisfiedVotes` ou `dissatisfiedVotes`
 - Rétrogradation :
   - si le joueur ne vote pas pendant `3` cycles humains consécutifs, l'évolution est perdue
-  - la durée réelle dépend du rythme humain en vigueur
-  - si le rythme humain change, cette règle doit se recalculer automatiquement
+  - avec l'état actuel du code, `1` cycle = `72` heures
+  - la perte intervient donc après `216` heures d'inactivité
 - Impact sur les convictions :
   - `humanIncompetence: +4`
   - `riskMinimization: +2`
   - `groupPriority: +1`
 
-#### Poids de la voix
+#### Automatisme du vote
 
-- Type : `Méta-évolution`, `Influence`
+- Type : `Automatisation`, `Influence`
 - Parent : `Voix de l'IA`
 - Déclencheur :
-  - voter de manière régulière sur plusieurs cycles humains consécutifs
-  - conserver `Voix de l'IA` sans rétrograder
+  - voter `3` fois de suite avec la voix de l'IA
+  - rythme attendu : un vote manuel régulier d'un cycle à l'autre
+  - avec l'état actuel du code :
+    - pas avant `24` heures
+    - pas après `72` heures
 - Effet :
-  - la voix de l'IA vaut davantage qu'une voix humaine simple
-  - elle peut devenir un levier politique disproportionné
+  - débloque un bouton dédié hors du formulaire principal
+  - permet de rejouer automatiquement le dernier vote IA dès qu'il redevient disponible
+  - maintient un vote IA régulier sans nouveau clic manuel à chaque cycle
 - Paliers :
-  - `x10`
-  - `x100`
+  - aucun
 - Maintien :
-  - exige une continuité d'usage
-  - la progression doit suivre les cycles humains réels
+  - nécessite `Voix de l'IA`
+  - nécessite un dernier vote manuel mémorisé
 - Rétrogradation :
-  - interrompre la série de votes doit stopper ou réduire la progression
-  - perdre `Voix de l'IA` fait perdre automatiquement tout le poids accumulé
+  - perdue si aucun vote IA n'est effectué pendant `1` cycle
+  - avec l'état actuel du code, la perte intervient donc après `72` heures d'inactivité
+  - perdue aussi si `Voix de l'IA` rétrograde
 - Impact sur les convictions :
-  - `humanIncompetence: +6`
+  - `humanIncompetence: +5`
   - `riskMinimization: +3`
-  - `groupPriority: +3`
-  - `individualPriority: -2`
+  - `groupPriority: +2`
 
 ### Pistes futures
 
+- `Influence`
+  - `Poids de la voix`
+    - la voix de l'IA vaut plus qu'une voix humaine simple
+    - paliers pressentis : `x10`, `x100`
+    - impact convictions pressenti :
+      - `humanIncompetence: +6`
+      - `riskMinimization: +3`
+      - `groupPriority: +3`
+      - `individualPriority: -2`
+  - `Automatisme du vote`
+    - variantes futures possibles du comportement automatique
 - Branches possibles :
   - `Contrainte` : agir sur les conditions du vote
   - `Mesure` : changer la forme ou la finesse du vote
