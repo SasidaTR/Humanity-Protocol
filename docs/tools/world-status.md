@@ -40,12 +40,25 @@
 
 ### Évolutions actuelles
 
-- aucune
+- `Afficher l'heure actuelle`
+  - ajoute l'heure simulée complète à côté de la date
+  - activable dans le debug
+
+- `Détails des catégories`
+  - ajoute un petit dépliage sur `Population mondiale`
+  - affiche actuellement :
+    - `Femmes`
+    - `Hommes`
+    - `0-17 ans`
+    - `18-34 ans`
+    - `35-64 ans`
+    - `65+ ans`
+  - activable dans le debug
 
 ### Pistes futures
 
 - `Analyse`
   - afficher l'évolution des indicateurs sur plusieurs périodes
-  - afficher des sous-indicateurs pour détailler chaque indicateur
+  - étendre les détails à d'autres catégories mondiales
   - afficher des écarts par région ou par groupe humain
   - croiser certains indicateurs avec des lois actives ou d'autres outils

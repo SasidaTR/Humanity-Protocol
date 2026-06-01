@@ -48,6 +48,9 @@ Le cœur du projet reste une tension morale :
 
 ### Évolutions déjà présentes
 
+- `État mondial`
+  - `Afficher l'heure actuelle`
+  - `Détails des catégories`
 - `Sondage de satisfaction`
   - `Voix de l'IA`
   - `Automatisme du vote`
@@ -85,6 +88,13 @@ Le cœur du projet reste une tension morale :
   - base de travail pour convictions, idéologies et thèmes
 - `src/renderer/scripts/core/config.js`
   - valeurs de configuration réellement utilisées par le prototype
+
+## Interface et apparence
+
+- le thème idéologique reste porté par `data-theme`
+- un mode d'apparence `system / light / dark` existe aussi dans les paramètres
+- la variante `default` commence à utiliser une structure de variables plus riche dans `src/renderer/styles/main.css`
+- les autres thèmes pourront ensuite recevoir leur propre déclinaison claire et sombre
 
 ## Règles de lecture importantes
 

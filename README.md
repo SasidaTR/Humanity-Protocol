@@ -40,12 +40,14 @@ Dans `src/renderer/scripts`, la structure est désormais séparée entre :
 Le prototype contient déjà une base de simulation et d'interface pour :
 
 - un panneau d'état mondial fenêtré et déplaçable
+- un premier niveau de détail debugable sur l'état mondial
 - un outil visuel de vote de satisfaction
 - un outil `Lois universelles` avec une première loi visuelle `Vote obligatoire`
 - un sondage de satisfaction calculé par cohortes adultes
 - une simulation de vote fondée sur des cohortes agrégées croisant âge, activité, revenu, sexe, rapport à l'autorité, éducation et santé
 - un premier système de `convictions`
 - un premier système de `thèmes`
+- un mode d'apparence `système`, `clair` ou `sombre`
 - une simulation temporelle continue avec vitesses `pause`, `x1`, `x2`, `x4`
 - un système de debug permettant d'activer des outils et leurs évolutions en cours de partie
 

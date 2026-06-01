@@ -11,6 +11,7 @@ const ALLOWED_SIMULATION_STEP_HOURS = [
 const defaultSettings = {
 	startFullscreen: true,
 	language: 'fr',
+	appearanceMode: 'system',
 	skipIntroOnNewGame: false,
 	simulationStepHours: 1,
 	debug: {
@@ -24,10 +25,14 @@ function mergeSettings(settings = {}){
 	const parsedSimulationStepHours = Number(settings.simulationStepHours)
 	const rawDebug = settings.debug || {}
 	const nextSimulationStepHours = ALLOWED_SIMULATION_STEP_HOURS.find((value) => value === parsedSimulationStepHours)
+	const nextAppearanceMode = ['system', 'light', 'dark'].includes(settings.appearanceMode)
+		? settings.appearanceMode
+		: defaultSettings.appearanceMode
 
 	return {
 		...defaultSettings,
 		...settings,
+		appearanceMode: nextAppearanceMode,
 		simulationStepHours: nextSimulationStepHours ?? defaultSettings.simulationStepHours,
 		debug: {
 			...defaultSettings.debug,

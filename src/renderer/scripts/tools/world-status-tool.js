@@ -5,8 +5,12 @@ let worldDateValue = null
 let worldTimeValue = null
 let worldSpeedValue = null
 let worldPopulation = null
+let worldPopulationSummary = null
+let worldPopulationDetailToggle = null
+let worldPopulationDetailLine = null
 let worldSatisfaction = null
 let worldFunds = null
+let isPopulationDetailExpanded = false
 
 function ensureWorldPanel(container){
 	if (!container) {
@@ -29,6 +33,22 @@ function ensureWorldPanel(container){
 		worldDate.append(worldDateValue, worldTimeValue, worldSpeedValue)
 		worldPopulation = document.createElement('p')
 		worldPopulation.id = 'world-population'
+		worldPopulationSummary = document.createElement('span')
+		worldPopulationSummary.className = 'world-status-summary'
+		worldPopulationDetailToggle = document.createElement('button')
+		worldPopulationDetailToggle.type = 'button'
+		worldPopulationDetailToggle.className = 'world-status-detail-toggle'
+		worldPopulationDetailToggle.addEventListener('click', () => {
+			isPopulationDetailExpanded = !isPopulationDetailExpanded
+			renderWorldStatusTool({ language: currentLanguage })
+		})
+		worldPopulationDetailLine = document.createElement('span')
+		worldPopulationDetailLine.className = 'world-status-detail-line'
+		worldPopulation.append(
+			worldPopulationSummary,
+			worldPopulationDetailToggle,
+			worldPopulationDetailLine
+		)
 		worldSatisfaction = document.createElement('p')
 		worldSatisfaction.id = 'world-satisfaction'
 		worldFunds = document.createElement('p')
@@ -121,6 +141,13 @@ function renderWorldStatusTool({ language = 'fr', toolBody } = {}){
 	const satisfactionLabel = window.humanityProtocolI18n.getTranslation(currentLanguage, 'world.satisfaction')
 	const fundsLabel = window.humanityProtocolI18n.getTranslation(currentLanguage, 'world.funds')
 	const showCurrentTime = window.humanityProtocolDebug.isToolEvolutionEnabled('world-status', 'show-current-time')
+	const showDetailedStats = window.humanityProtocolDebug.isToolEvolutionEnabled('world-status', 'detailed-stats')
+	const femaleLabel = window.humanityProtocolI18n.getTranslation(currentLanguage, 'world.female')
+	const maleLabel = window.humanityProtocolI18n.getTranslation(currentLanguage, 'world.male')
+	const age0To17Label = window.humanityProtocolI18n.getTranslation(currentLanguage, 'world.age0To17')
+	const age18To34Label = window.humanityProtocolI18n.getTranslation(currentLanguage, 'world.age18To34')
+	const age35To64Label = window.humanityProtocolI18n.getTranslation(currentLanguage, 'world.age35To64')
+	const age65PlusLabel = window.humanityProtocolI18n.getTranslation(currentLanguage, 'world.age65Plus')
 
 	if (
 		!worldDate ||
@@ -128,6 +155,9 @@ function renderWorldStatusTool({ language = 'fr', toolBody } = {}){
 		!worldTimeValue ||
 		!worldSpeedValue ||
 		!worldPopulation ||
+		!worldPopulationSummary ||
+		!worldPopulationDetailToggle ||
+		!worldPopulationDetailLine ||
 		!worldSatisfaction ||
 		!worldFunds
 	) {
@@ -138,7 +168,24 @@ function renderWorldStatusTool({ language = 'fr', toolBody } = {}){
 	worldTimeValue.textContent = showCurrentTime ? formatCurrentTime(worldTime.timestamp, currentLanguage) : ''
 	worldTimeValue.hidden = !showCurrentTime
 	worldSpeedValue.textContent = formatSimulationSpeedIcon(worldTime.displaySpeedMultiplier)
-	worldPopulation.textContent = `${populationLabel} : ${formatPopulation(population.total, currentLanguage)}`
+	worldPopulationSummary.textContent = `${populationLabel} : ${formatPopulation(population.total, currentLanguage)}`
+	worldPopulationDetailToggle.textContent = isPopulationDetailExpanded ? '▾' : '▸'
+	worldPopulationDetailToggle.hidden = !showDetailedStats
+	worldPopulationDetailToggle.setAttribute('aria-expanded', showDetailedStats && isPopulationDetailExpanded ? 'true' : 'false')
+	if (showDetailedStats && isPopulationDetailExpanded) {
+		worldPopulationDetailLine.innerHTML = [
+			`${femaleLabel} : ${formatPopulation(population.sex.female, currentLanguage)}`,
+			`${maleLabel} : ${formatPopulation(population.sex.male, currentLanguage)}`,
+			`${age0To17Label} : ${formatPopulation(population.age.age0To17, currentLanguage)}`,
+			`${age18To34Label} : ${formatPopulation(population.age.age18To34, currentLanguage)}`,
+			`${age35To64Label} : ${formatPopulation(population.age.age35To64, currentLanguage)}`,
+			`${age65PlusLabel} : ${formatPopulation(population.age.age65Plus, currentLanguage)}`
+		].join('<br>')
+		worldPopulationDetailLine.hidden = false
+	} else {
+		worldPopulationDetailLine.textContent = ''
+		worldPopulationDetailLine.hidden = true
+	}
 	worldSatisfaction.textContent = `${satisfactionLabel} : ${survey.satisfaction}%`
 	worldFunds.textContent = `${fundsLabel} : ${formatFunds(funds.available, currentLanguage)}`
 }
@@ -175,12 +222,24 @@ window.humanityProtocolFunds.subscribe(() => {
 	renderWorldStatusTool({ language: currentLanguage })
 })
 
+window.humanityProtocolDebug.subscribe(() => {
+	if (!window.humanityProtocolTools.isToolEnabled('world-status')) {
+		return
+	}
+
+	renderWorldStatusTool({ language: currentLanguage })
+})
+
 window.humanityProtocolTools.registerTool({
 	debugLabel: 'État mondial',
 	evolutions: [
 		{
 			id: 'show-current-time',
 			label: "Afficher l’heure actuelle"
+		},
+		{
+			id: 'detailed-stats',
+			label: 'Détails des catégories'
 		}
 	],
 	getTitle: (language) => language === 'en' ? 'World Status' : 'État mondial',

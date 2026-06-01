@@ -1,9 +1,85 @@
+/*
+Structure cible des variables de thème.
+Les thèmes actuels n'utilisent encore qu'une base réduite, mais à terme chaque thème devrait pouvoir définir :
+
+Couleurs :
+- --color-background
+- --color-surface
+- --color-text
+- --color-accent
+- --color-alert
+
+Forme :
+- --shape-radius
+- --border-width
+- --border-contrast
+- --shadow-strength
+- --spacing-density
+
+Typographie :
+- --font-ui
+- --font-title
+- --font-mono
+- --letter-spacing-ui
+- --letter-spacing-title
+
+Ambiance :
+- --surface-opacity
+- --panel-blur
+- --panel-noise
+- --contrast-strength
+- --motion-style
+
+Usage recommandé :
+- garder les variables déjà branchées comme socle minimal
+- ajouter progressivement les nouvelles variables quand un besoin visuel réel apparaît
+- éviter de multiplier les variables si elles ne différencient pas concrètement les thèmes
+*/
+
 body[data-theme="default"] {
-	--color-background: #0d1011;
-	--color-surface: #16211b;
-	--color-text: #7cffa1;
-	--shape-radius: 0.25rem;
-	--font-ui: Georgia, "Times New Roman", serif;
+	--color-background: #e7ecec;
+	--color-surface: #f7f9f8;
+	--color-text: #1f3035;
+	--color-accent: #58717a;
+	--color-alert: #8e4d46;
+	--shape-radius: 0.32rem;
+	--border-width: 1px;
+	--border-contrast: 0.2;
+	--shadow-strength: 0.08;
+	--spacing-density: 1;
+	--font-ui: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+	--font-title: "Avenir Next Condensed", "Gill Sans", "Trebuchet MS", sans-serif;
+	--font-mono: "Courier New", Courier, monospace;
+	--letter-spacing-ui: 0.01em;
+	--letter-spacing-title: 0.14em;
+	--surface-opacity: 0.94;
+	--panel-blur: 10px;
+	--panel-noise: 0;
+	--contrast-strength: 1;
+	--motion-style: 160ms;
+}
+
+body[data-appearance="dark"][data-theme="default"] {
+	--color-background: #0d1113;
+	--color-surface: #161d20;
+	--color-text: #d7e0dd;
+	--color-accent: #91adb5;
+	--color-alert: #c47c72;
+	--shape-radius: 0.32rem;
+	--border-width: 1px;
+	--border-contrast: 0.26;
+	--shadow-strength: 0.18;
+	--spacing-density: 1;
+	--font-ui: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+	--font-title: "Avenir Next Condensed", "Gill Sans", "Trebuchet MS", sans-serif;
+	--font-mono: "Courier New", Courier, monospace;
+	--letter-spacing-ui: 0.01em;
+	--letter-spacing-title: 0.14em;
+	--surface-opacity: 0.9;
+	--panel-blur: 10px;
+	--panel-noise: 0;
+	--contrast-strength: 1.08;
+	--motion-style: 160ms;
 }
 
 body[data-theme="liberale"] {
@@ -115,9 +191,28 @@ main {
 }
 
 body {
+	--color-accent: var(--color-text);
+	--color-alert: #b44d42;
+	--border-width: 1px;
+	--border-contrast: 0.22;
+	--shadow-strength: 0.08;
+	--spacing-density: 1;
+	--font-title: var(--font-ui);
+	--font-mono: "Courier New", Courier, monospace;
+	--letter-spacing-ui: 0.01em;
+	--letter-spacing-title: 0.08em;
+	--surface-opacity: 0.9;
+	--panel-blur: 8px;
+	--panel-noise: 0;
+	--contrast-strength: 1;
+	--motion-style: 160ms;
 	background: var(--color-background);
+	background-image:
+		radial-gradient(circle at top, color-mix(in srgb, var(--color-accent) 11%, transparent), transparent 42%),
+		linear-gradient(180deg, color-mix(in srgb, var(--color-background) 96%, white 4%), var(--color-background));
 	color: var(--color-text);
 	font-family: var(--font-ui);
+	letter-spacing: var(--letter-spacing-ui);
 }
 
 #menu-screen.is-active {
@@ -137,7 +232,8 @@ body {
 	content: "";
 	position: absolute;
 	inset: 0;
-	background: rgba(0, 0, 0, 0.5);
+	background:
+		linear-gradient(180deg, color-mix(in srgb, var(--color-background) 36%, transparent), color-mix(in srgb, var(--color-background) 62%, transparent));
 	z-index: 0;
 }
 
@@ -185,16 +281,22 @@ body {
 	display: flex;
 	flex-direction: column;
 	gap: 0.75rem;
-	padding: 1rem;
+	padding: calc(1rem * var(--spacing-density));
 	box-sizing: border-box;
-	background: color-mix(in srgb, var(--color-surface) 84%, transparent);
-	border: 1px solid color-mix(in srgb, var(--color-text) 25%, transparent);
+	background:
+		linear-gradient(180deg, color-mix(in srgb, var(--color-surface) 96%, transparent), color-mix(in srgb, var(--color-surface) 88%, transparent));
+	border: var(--border-width) solid color-mix(in srgb, var(--color-text) 22%, transparent);
 	border-radius: var(--shape-radius);
+	box-shadow: 0 1rem 2rem color-mix(in srgb, var(--color-text) 4%, transparent);
 }
 
 .debug-section h2 {
 	margin: 0;
 	font-size: 1rem;
+	font-family: var(--font-title);
+	letter-spacing: var(--letter-spacing-title);
+	text-transform: uppercase;
+	font-weight: 600;
 }
 
 .debug-section-header {
@@ -238,10 +340,28 @@ body {
 select {
 	background: var(--color-surface);
 	color: var(--color-text);
-	border: 1px solid var(--color-text);
+	border: var(--border-width) solid color-mix(in srgb, var(--color-text) 32%, transparent);
 	border-radius: var(--shape-radius);
 	font: inherit;
 	padding: 0.35rem 0.5rem;
+}
+
+.world-status-detail-toggle {
+	margin-left: 0.55rem;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	color: color-mix(in srgb, var(--color-text) 78%, transparent);
+	font-size: 0.88rem;
+	line-height: 1;
+	vertical-align: middle;
+}
+
+.world-status-detail-line {
+	display: block;
+	margin-top: 0.3rem;
+	color: color-mix(in srgb, var(--color-text) 76%, transparent);
+	font-size: 0.82rem;
 }
 
 button:focus,
@@ -262,13 +382,16 @@ select:focus-visible {
 	position: fixed;
 	min-width: 18rem;
 	max-width: min(28rem, calc(100vw - 24px));
-	background: color-mix(in srgb, var(--color-surface) 90%, transparent);
-	border: 1px solid color-mix(in srgb, var(--color-text) 35%, transparent);
+	background:
+		linear-gradient(180deg, color-mix(in srgb, var(--color-surface) 98%, transparent), color-mix(in srgb, var(--color-surface) 92%, transparent));
+	border: var(--border-width) solid color-mix(in srgb, var(--color-text) 24%, transparent);
 	border-radius: var(--shape-radius);
-	box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-text) 10%, transparent);
+	box-shadow:
+		0 0 0 1px color-mix(in srgb, var(--color-text) 8%, transparent),
+		0 1.15rem 2.2rem color-mix(in srgb, var(--color-text) 7%, transparent);
 	pointer-events: auto;
 	overflow: hidden;
-	backdrop-filter: blur(8px);
+	backdrop-filter: blur(var(--panel-blur));
 }
 
 .tool-window.is-collapsed .tool-window-header {
@@ -280,10 +403,12 @@ select:focus-visible {
 	align-items: center;
 	justify-content: space-between;
 	gap: 0.75rem;
-	padding: 0.55rem 0.7rem;
-	border-bottom: 1px solid color-mix(in srgb, var(--color-text) 20%, transparent);
+	padding: calc(0.55rem * var(--spacing-density)) calc(0.7rem * var(--spacing-density));
+	border-bottom: var(--border-width) solid color-mix(in srgb, var(--color-text) 16%, transparent);
 	cursor: grab;
 	user-select: none;
+	background:
+		linear-gradient(180deg, color-mix(in srgb, var(--color-accent) 8%, var(--color-surface)), color-mix(in srgb, var(--color-surface) 96%, transparent));
 }
 
 .tool-window-header:active {
@@ -294,6 +419,9 @@ select:focus-visible {
 	margin: 0;
 	font-size: 0.95rem;
 	font-weight: 600;
+	font-family: var(--font-title);
+	letter-spacing: var(--letter-spacing-title);
+	text-transform: uppercase;
 }
 
 .tool-window-actions {
@@ -308,7 +436,7 @@ select:focus-visible {
 }
 
 .tool-window-body {
-	padding: 0.7rem;
+	padding: calc(0.75rem * var(--spacing-density));
 }
 
 .tool-window-body p {
@@ -402,10 +530,10 @@ select:focus-visible {
 	display: grid;
 	gap: 0.45rem;
 	padding: 0.7rem;
-	background: color-mix(in srgb, var(--color-surface) 88%, transparent);
-	border: 1px solid color-mix(in srgb, var(--color-text) 18%, transparent);
+	background: color-mix(in srgb, var(--color-surface) 90%, transparent);
+	border: var(--border-width) solid color-mix(in srgb, var(--color-text) 18%, transparent);
 	border-radius: var(--shape-radius);
-	box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-text) 8%, transparent);
+	box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-text) 6%, transparent);
 }
 
 .satisfaction-vote-automation[hidden] {
@@ -580,14 +708,15 @@ select:focus-visible {
 	display: grid;
 	gap: 0.75rem;
 	padding: 0.9rem 1rem;
-	border: 1px solid color-mix(in srgb, var(--color-text) 18%, transparent);
+	border: var(--border-width) solid color-mix(in srgb, var(--color-text) 18%, transparent);
 	border-radius: var(--shape-radius);
-	background: color-mix(in srgb, var(--color-surface) 88%, transparent);
+	background:
+		linear-gradient(180deg, color-mix(in srgb, var(--color-surface) 94%, transparent), color-mix(in srgb, var(--color-surface) 88%, transparent));
 }
 
 .universal-laws-row.is-enabled {
-	border-color: color-mix(in srgb, var(--color-text) 42%, transparent);
-	box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-text) 14%, transparent);
+	border-color: color-mix(in srgb, var(--color-accent) 48%, transparent);
+	box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-accent) 16%, transparent);
 }
 
 .universal-laws-toggle {
@@ -631,8 +760,9 @@ select:focus-visible {
 	color: var(--color-text);
 	font-size: 0.84rem;
 	font-weight: 600;
-	letter-spacing: 0.06em;
+	letter-spacing: var(--letter-spacing-title);
 	text-transform: uppercase;
+	font-family: var(--font-title);
 }
 
 .universal-laws-detail-value {
@@ -673,9 +803,20 @@ button {
 	-webkit-appearance: none;
 	background: var(--color-surface);
 	color: var(--color-text);
-	border: 1px solid var(--color-text);
+	border: var(--border-width) solid color-mix(in srgb, var(--color-text) 34%, transparent);
 	border-radius: var(--shape-radius);
 	font: inherit;
 	text-align: center;
 	cursor: pointer;
+	transition:
+		border-color var(--motion-style) ease,
+		background var(--motion-style) ease,
+		color var(--motion-style) ease,
+		box-shadow var(--motion-style) ease,
+		transform var(--motion-style) ease;
+}
+
+button:hover,
+select:hover {
+	border-color: color-mix(in srgb, var(--color-accent) 52%, transparent);
 }

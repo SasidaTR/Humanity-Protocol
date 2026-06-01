@@ -17,6 +17,10 @@ const translations = {
 			fullscreen: 'Plein écran',
 			skipIntroOnNewGame: "Passer l'introduction pour les nouvelles parties",
 			language: 'Langue',
+			appearanceMode: 'Apparence',
+			appearanceSystem: 'Système',
+			appearanceLight: 'Clair',
+			appearanceDark: 'Sombre',
 			simulationInterval: "Pas d'actualisation du monde (heures de jeu)",
 			languageFr: 'Français',
 			languageEn: 'Anglais',
@@ -54,7 +58,15 @@ const translations = {
 		world: {
 			funds: 'Fonds disponibles',
 			population: 'Population mondiale',
-			satisfaction: 'Satisfaction'
+			satisfaction: 'Satisfaction',
+			detailSummary: 'Résumé',
+			detailSex: 'Sexe',
+			age0To17: '0-17 ans',
+			age18To34: '18-34 ans',
+			age35To64: '35-64 ans',
+			age65Plus: '65+ ans',
+			female: 'Femmes',
+			male: 'Hommes'
 		},
 		satisfactionVote: {
 			title: 'Satisfaction',
@@ -114,6 +126,10 @@ const translations = {
 			fullscreen: 'Fullscreen',
 			skipIntroOnNewGame: 'Skip introduction for new games',
 			language: 'Language',
+			appearanceMode: 'Appearance',
+			appearanceSystem: 'System',
+			appearanceLight: 'Light',
+			appearanceDark: 'Dark',
 			simulationInterval: 'World refresh step (game hours)',
 			languageFr: 'French',
 			languageEn: 'English',
@@ -151,7 +167,15 @@ const translations = {
 		world: {
 			funds: 'Available funds',
 			population: 'World population',
-			satisfaction: 'Satisfaction'
+			satisfaction: 'Satisfaction',
+			detailSummary: 'Summary',
+			detailSex: 'Sex',
+			age0To17: 'Ages 0-17',
+			age18To34: 'Ages 18-34',
+			age35To64: 'Ages 35-64',
+			age65Plus: 'Ages 65+',
+			female: 'Women',
+			male: 'Men'
 		},
 		satisfactionVote: {
 			title: 'Satisfaction',

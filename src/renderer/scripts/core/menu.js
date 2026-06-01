@@ -17,6 +17,7 @@ const loadBackButton = document.querySelector('#load-back-button')
 const fullscreenCheckbox = document.querySelector('#fullscreen-checkbox')
 const skipIntroCheckbox = document.querySelector('#skip-intro-checkbox')
 const languageSelect = document.querySelector('#language-select')
+const appearanceModeSelect = document.querySelector('#appearance-mode-select')
 const simulationIntervalSelect = document.querySelector('#simulation-interval-select')
 const debugThemeSelect = document.querySelector('#debug-theme-select')
 const debugToolsList = document.querySelector('#debug-tools-list')
@@ -198,11 +199,13 @@ async function loadSettings(){
 	const settings = await window.humanityProtocol.loadSettings()
 	gameState.settings = settings
 	window.humanityProtocolI18n.applyTranslations(settings.language)
+	window.humanityProtocolTheme.applyAppearanceMode(settings.appearanceMode)
 	window.humanityProtocolTime.setSimulationStepHours(settings.simulationStepHours)
 	window.humanityProtocolTools.renderTools({ language: settings.language })
 	fullscreenCheckbox.checked = settings.startFullscreen
 	skipIntroCheckbox.checked = settings.skipIntroOnNewGame === true
 	languageSelect.value = settings.language
+	appearanceModeSelect.value = settings.appearanceMode
 	simulationIntervalSelect.value = String(settings.simulationStepHours)
 	syncDebugControls()
 	return settings
@@ -380,6 +383,16 @@ languageSelect.addEventListener('change', async () => {
 
 	syncDebugControls()
 
+	gameState.settings = settings
+})
+
+appearanceModeSelect.addEventListener('change', async () => {
+	const settings = await window.humanityProtocol.updateSettings({
+		appearanceMode: appearanceModeSelect.value
+	})
+
+	window.humanityProtocolTheme.applyAppearanceMode(settings.appearanceMode)
+	appearanceModeSelect.value = settings.appearanceMode
 	gameState.settings = settings
 })
 
