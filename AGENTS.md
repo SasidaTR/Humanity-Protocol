@@ -83,8 +83,8 @@ Le cœur du projet reste une tension morale :
   - fiches techniques outil par outil
 - `docs/IDEOLOGIES.md`
   - base de travail pour convictions, idéologies et thèmes
-- `docs/CALIBRATION.md`
-  - coefficients et ajustements numériques du prototype
+- `src/renderer/scripts/core/config.js`
+  - valeurs de configuration réellement utilisées par le prototype
 
 ## Règles de lecture importantes
 
@@ -101,7 +101,7 @@ Le cœur du projet reste une tension morale :
 Le socle existe déjà.
 Le travail restant porte surtout sur :
 
-- le calibrage réaliste via `docs/CALIBRATION.md`
+- le calibrage réaliste via `src/renderer/scripts/core/config.js`
 - le lien avec les `convictions`
 - l'ajout futur d'autres lois et d'autres sanctions
 

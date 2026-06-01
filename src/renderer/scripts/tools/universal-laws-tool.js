@@ -1,6 +1,7 @@
 (function(){
-	const MANDATORY_VOTE_FINE_AMOUNT = 135
-	const MANDATORY_VOTE_FINE_RATE_PER_WINDOW = 0.012
+	const mandatoryVoteConfig = window.humanityProtocolConfig?.laws?.mandatoryVote || {}
+	const MANDATORY_VOTE_FINE_AMOUNT = mandatoryVoteConfig.fineAmount ?? 135
+	const MANDATORY_VOTE_FINE_RATE_PER_WINDOW = mandatoryVoteConfig.fineRatePerWindow ?? 0.012
 
 	const LAW_DEFINITIONS = {
 		mandatoryVote: {

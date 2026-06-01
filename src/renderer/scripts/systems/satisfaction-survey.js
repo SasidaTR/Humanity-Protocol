@@ -1,195 +1,35 @@
-const INITIAL_TURNOUT_RATE = 0.62
-const INITIAL_WORLD_SATISFACTION = 60
-const ACTIVE_VOTE_DURATION_HOURS = 24
-const INITIAL_ACTIVE_VOTE_GROUPS = 12
-const TURNOUT_RATE_RANGE = {
+const surveyConfig = window.humanityProtocolConfig?.survey || {}
+const mandatoryVoteConfig = window.humanityProtocolConfig?.laws?.mandatoryVote || {}
+const INITIAL_TURNOUT_RATE = surveyConfig.initialTurnoutRate ?? 0.62
+const INITIAL_WORLD_SATISFACTION = surveyConfig.initialWorldSatisfaction ?? 60
+const ACTIVE_VOTE_DURATION_HOURS = surveyConfig.activeVoteDurationHours ?? 24
+const INITIAL_ACTIVE_VOTE_GROUPS = surveyConfig.initialActiveVoteGroups ?? 12
+const TURNOUT_RATE_RANGE = surveyConfig.turnoutRateRange || {
 	min: 0.3,
 	max: 1
 }
-const SATISFACTION_RATE_RANGE = {
+const SATISFACTION_RATE_RANGE = surveyConfig.satisfactionRateRange || {
 	min: 0.12,
 	max: 0.92
 }
-const VOTE_WINDOW_HOURS = 24
-const COHORT_VOTE_INTERVAL_HOURS = {
+const VOTE_WINDOW_HOURS = surveyConfig.voteWindowHours ?? 24
+const COHORT_VOTE_INTERVAL_HOURS = surveyConfig.cohortVoteIntervalHours || {
 	min: 24,
 	max: 72
 }
-const AGE_VOTER_PROFILES = {
-	age18To34: {
-		turnoutRate: 0.55,
-		satisfactionRate: 0.56
-	},
-	age35To64: {
-		turnoutRate: 0.72,
-		satisfactionRate: 0.6
-	},
-	age65Plus: {
-		turnoutRate: 0.78,
-		satisfactionRate: 0.62
-	}
-}
-const ACTIVITY_VOTER_MODIFIERS = {
-	workers: {
-		turnoutRate: 0.05,
-		satisfactionRate: 0.04
-	},
-	nonWorkers: {
-		turnoutRate: -0.05,
-		satisfactionRate: -0.06
-	},
-	none: {
-		turnoutRate: 0,
-		satisfactionRate: 0
-	}
-}
-const INCOME_LEVEL_MODIFIERS = {
-	veryPoor: {
-		turnoutRate: -0.1,
-		satisfactionRate: -0.18
-	},
-	poor: {
-		turnoutRate: -0.05,
-		satisfactionRate: -0.1
-	},
-	middleIncome: {
-		turnoutRate: 0,
-		satisfactionRate: 0
-	},
-	comfortableIncome: {
-		turnoutRate: 0.05,
-		satisfactionRate: 0.08
-	},
-	highIncome: {
-		turnoutRate: 0.08,
-		satisfactionRate: 0.14
-	}
-}
-const AUTHORITY_RELATION_MODIFIERS = {
-	supportive: {
-		turnoutRate: 0.05,
-		satisfactionRate: 0.01
-	},
-	neutral: {
-		turnoutRate: 0,
-		satisfactionRate: 0
-	},
-	defiant: {
-		turnoutRate: -0.08,
-		satisfactionRate: -0.02
-	}
-}
-const EDUCATION_MODIFIERS = {
-	low: {
-		turnoutRate: -0.09,
-		satisfactionRate: -0.02
-	},
-	medium: {
-		turnoutRate: 0,
-		satisfactionRate: 0
-	},
-	high: {
-		turnoutRate: 0.07,
-		satisfactionRate: 0.01
-	}
-}
-const HEALTH_MODIFIERS = {
-	healthy: {
-		votingCapacityRate: 1,
-		turnoutRate: 0.01,
-		satisfactionRate: 0.02
-	},
-	mentalFragile: {
-		votingCapacityRate: 0.95,
-		turnoutRate: -0.06,
-		satisfactionRate: -0.1
-	},
-	physicalFragile: {
-		votingCapacityRate: 0.88,
-		turnoutRate: -0.09,
-		satisfactionRate: -0.11
-	},
-	dualFragile: {
-		votingCapacityRate: 0.76,
-		turnoutRate: -0.14,
-		satisfactionRate: -0.18
-	}
-}
-const OPINION_NOISE = {
+const AGE_VOTER_PROFILES = surveyConfig.ageVoterProfiles || {}
+const ACTIVITY_VOTER_MODIFIERS = surveyConfig.activityVoterModifiers || {}
+const INCOME_LEVEL_MODIFIERS = surveyConfig.incomeLevelModifiers || {}
+const AUTHORITY_RELATION_MODIFIERS = surveyConfig.authorityRelationModifiers || {}
+const EDUCATION_MODIFIERS = surveyConfig.educationModifiers || {}
+const HEALTH_MODIFIERS = surveyConfig.healthModifiers || {}
+const OPINION_NOISE = surveyConfig.opinionNoise || {
 	turnoutRate: 0.025,
 	satisfactionRate: 0.04
 }
-const MANDATORY_VOTE_BASE_TURNOUT_BONUS = 0.12
-const MANDATORY_VOTE_TURNOUT_MODIFIERS = {
-	age: {
-		age18To34: 0.03,
-		age35To64: 0,
-		age65Plus: -0.02
-	},
-	activity: {
-		workers: -0.01,
-		nonWorkers: 0.03,
-		none: 0
-	},
-	income: {
-		veryPoor: 0.05,
-		poor: 0.03,
-		middleIncome: 0,
-		comfortableIncome: -0.01,
-		highIncome: -0.03
-	},
-	authorityRelation: {
-		supportive: -0.04,
-		neutral: 0,
-		defiant: 0.06
-	},
-	education: {
-		low: 0.03,
-		medium: 0,
-		high: -0.02
-	},
-	health: {
-		healthy: 0,
-		mentalFragile: -0.02,
-		physicalFragile: -0.03,
-		dualFragile: -0.06
-	}
-}
-const MANDATORY_VOTE_SATISFACTION_MODIFIERS = {
-	age: {
-		age18To34: -0.015,
-		age35To64: -0.004,
-		age65Plus: 0.006
-	},
-	activity: {
-		workers: 0,
-		nonWorkers: -0.01,
-		none: 0
-	},
-	income: {
-		veryPoor: -0.04,
-		poor: -0.025,
-		middleIncome: -0.005,
-		comfortableIncome: 0,
-		highIncome: 0.005
-	},
-	authorityRelation: {
-		supportive: 0.01,
-		neutral: -0.004,
-		defiant: -0.06
-	},
-	education: {
-		low: -0.012,
-		medium: 0,
-		high: -0.004
-	},
-	health: {
-		healthy: 0,
-		mentalFragile: -0.02,
-		physicalFragile: -0.02,
-		dualFragile: -0.035
-	}
-}
+const MANDATORY_VOTE_BASE_TURNOUT_BONUS = mandatoryVoteConfig.baseTurnoutBonus ?? 0.12
+const MANDATORY_VOTE_TURNOUT_MODIFIERS = mandatoryVoteConfig.turnoutModifiers || {}
+const MANDATORY_VOTE_SATISFACTION_MODIFIERS = mandatoryVoteConfig.satisfactionModifiers || {}
 
 const surveyListeners = new Set()
 

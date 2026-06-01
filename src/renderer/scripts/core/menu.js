@@ -253,9 +253,8 @@ async function continueSavedRun(){
 }
 
 async function renderSaveList(){
-	const settings = await loadSettings()
 	return window.humanityProtocolSaves.renderSaveList({
-		language: settings.language,
+		language: getCurrentLanguage(),
 		saveList,
 		loadSave,
 		deleteSave: (saveId) => deleteSaveEntry(saveId)

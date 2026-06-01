@@ -1,51 +1,53 @@
-const INITIAL_WORLD_POPULATION = 8_000_000_000
-const INITIAL_SATISFACTION = 60
-const FEMALE_SHARE_OSCILLATION_RANGE = 0.008
-const WORKER_SHARE_OSCILLATION_RANGE = 0.08
-const HOURS_PER_YEAR = 365.25 * 24
-const LIFE_EXPECTANCY_YEARS = 80
-const TARGET_EVENTS_PER_MINUTE = 180
+const populationConfig = window.humanityProtocolConfig?.population || {}
+const INITIAL_WORLD_POPULATION = populationConfig.initialWorldPopulation ?? 8_000_000_000
+const INITIAL_SATISFACTION = populationConfig.initialSatisfaction ?? 60
+const FEMALE_SHARE_OSCILLATION_RANGE = populationConfig.femaleShareOscillationRange ?? 0.008
+const WORKER_SHARE_OSCILLATION_RANGE = populationConfig.workerShareOscillationRange ?? 0.08
+const HOURS_PER_YEAR = populationConfig.hoursPerYear ?? (365.25 * 24)
+const LIFE_EXPECTANCY_YEARS = populationConfig.lifeExpectancyYears ?? 80
+const TARGET_EVENTS_PER_MINUTE = populationConfig.targetEventsPerMinute ?? 180
 const TARGET_EVENTS_PER_HOUR = TARGET_EVENTS_PER_MINUTE * 60
-const EVENT_BALANCE_VARIATION = 0.25
-const INCOME_LEVEL_GROUPS = {
+const EVENT_BALANCE_VARIATION = populationConfig.eventBalanceVariation ?? 0.25
+const INCOME_LEVEL_GROUPS = populationConfig.incomeLevel || {
 	veryPoor: 0.1,
 	poor: 0.51,
 	middleIncome: 0.17,
 	comfortableIncome: 0.15,
 	highIncome: 0.07
 }
-const AUTHORITY_RELATION_GROUPS = {
+const AUTHORITY_RELATION_GROUPS = populationConfig.authorityRelation || {
 	supportive: 0.27,
 	neutral: 0.46,
 	defiant: 0.27
 }
-const EDUCATION_GROUPS = {
+const EDUCATION_GROUPS = populationConfig.education || {
 	low: 0.34,
 	medium: 0.46,
 	high: 0.2
 }
-const HEALTH_GROUPS = {
+const HEALTH_GROUPS = populationConfig.health || {
 	healthy: 0.75,
 	mentalFragile: 0.09,
 	physicalFragile: 0.11,
 	dualFragile: 0.05
 }
+const configuredAgeGroups = populationConfig.ageGroups || {}
 const AGE_GROUPS = {
 	age0To17: {
-		durationYears: 18,
-		initialShare: 0.215
+		durationYears: configuredAgeGroups.age0To17?.durationYears ?? 18,
+		initialShare: configuredAgeGroups.age0To17?.initialShare ?? 0.215
 	},
 	age18To34: {
-		durationYears: 17,
-		initialShare: 0.235
+		durationYears: configuredAgeGroups.age18To34?.durationYears ?? 17,
+		initialShare: configuredAgeGroups.age18To34?.initialShare ?? 0.235
 	},
 	age35To64: {
-		durationYears: 30,
-		initialShare: 0.37
+		durationYears: configuredAgeGroups.age35To64?.durationYears ?? 30,
+		initialShare: configuredAgeGroups.age35To64?.initialShare ?? 0.37
 	},
 	age65Plus: {
-		durationYears: LIFE_EXPECTANCY_YEARS - 65,
-		initialShare: 0.18
+		durationYears: configuredAgeGroups.age65Plus?.durationYears ?? (LIFE_EXPECTANCY_YEARS - 65),
+		initialShare: configuredAgeGroups.age65Plus?.initialShare ?? 0.18
 	}
 }
 const populationListeners = new Set()
@@ -61,8 +63,8 @@ const populationState = {
 			age65Plus: AGE_GROUPS.age65Plus.initialShare
 		},
 		activity: {
-			workers: 0.6,
-			nonWorkers: 0.4
+			workers: populationConfig.activity?.workers ?? 0.6,
+			nonWorkers: populationConfig.activity?.nonWorkers ?? 0.4
 		},
 		incomeLevel: {
 			veryPoor: INCOME_LEVEL_GROUPS.veryPoor,
@@ -88,8 +90,8 @@ const populationState = {
 			dualFragile: HEALTH_GROUPS.dualFragile
 		},
 		sex: {
-			female: 0.5,
-			male: 0.5
+			female: populationConfig.sex?.female ?? 0.5,
+			male: populationConfig.sex?.male ?? 0.5
 		}
 	},
 	trend: {
@@ -113,8 +115,8 @@ function createInitialPopulation(){
 				age65Plus: AGE_GROUPS.age65Plus.initialShare
 			},
 			activity: {
-				workers: 0.6,
-				nonWorkers: 0.4
+				workers: populationConfig.activity?.workers ?? 0.6,
+				nonWorkers: populationConfig.activity?.nonWorkers ?? 0.4
 			},
 			incomeLevel: {
 				veryPoor: INCOME_LEVEL_GROUPS.veryPoor,
@@ -140,8 +142,8 @@ function createInitialPopulation(){
 				dualFragile: HEALTH_GROUPS.dualFragile
 			},
 			sex: {
-				female: 0.5,
-				male: 0.5
+				female: populationConfig.sex?.female ?? 0.5,
+				male: populationConfig.sex?.male ?? 0.5
 			}
 		},
 		trend: {
@@ -375,7 +377,7 @@ function resolveSavedFemaleShare(savedPopulation){
 		return savedFemaleCount / referenceTotal
 	}
 
-	return 0.5
+	return populationConfig.sex?.female ?? 0.5
 }
 
 function resolveSavedWorkerShare(savedPopulation){
@@ -393,7 +395,7 @@ function resolveSavedWorkerShare(savedPopulation){
 		return savedWorkers / totalWorkingAge
 	}
 
-	return 0.6
+	return populationConfig.activity?.workers ?? 0.6
 }
 
 function buildIncomeLevelSharesFromCounts(savedPopulation){

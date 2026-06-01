@@ -602,6 +602,12 @@ select:focus-visible {
 	margin: 0.15rem 0 0;
 }
 
+.universal-laws-checkbox:focus,
+.universal-laws-checkbox:focus-visible {
+	outline: none;
+	box-shadow: none;
+}
+
 .universal-laws-details {
 	display: grid;
 	grid-template-columns: minmax(0, 1fr) max-content;

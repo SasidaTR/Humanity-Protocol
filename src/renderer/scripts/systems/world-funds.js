@@ -1,4 +1,4 @@
-const INITIAL_AVAILABLE_FUNDS = 1_000_000_000_000
+const INITIAL_AVAILABLE_FUNDS = window.humanityProtocolConfig?.funds?.initialAvailableFunds ?? 1_000_000_000_000
 
 const fundsListeners = new Set()
 

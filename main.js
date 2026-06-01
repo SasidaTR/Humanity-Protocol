@@ -1,7 +1,7 @@
 const { app, BrowserWindow, ipcMain } = require('electron')
 const { createMainWindow } = require('./src/main/window')
 const { loadSettings, saveSettings } = require('./src/main/settings-store')
-const { loadSaves, loadLatestSave, saveGame, deleteSave } = require('./src/main/save-store')
+const { listSaves, loadLatestSave, loadSaveById, saveGame, deleteSave } = require('./src/main/save-store')
 
 ipcMain.on('app:quit', () => {
 	app.quit()
@@ -23,7 +23,11 @@ ipcMain.handle('settings:update', (event, nextSettings) => {
 })
 
 ipcMain.handle('save:list', () => {
-	return loadSaves()
+	return listSaves()
+})
+
+ipcMain.handle('save:load', (_event, saveId) => {
+	return loadSaveById(saveId)
 })
 
 ipcMain.handle('save:latest', () => {

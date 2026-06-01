@@ -2,6 +2,14 @@ function sortSaves(saves){
 	return [...saves].sort((left, right) => right.updatedAt - left.updatedAt)
 }
 
+async function loadSaveById(saveId){
+	if (!saveId) {
+		return null
+	}
+
+	return window.humanityProtocol.loadSave(saveId)
+}
+
 async function refreshSaveAvailability({ setHasSaves, updateMenuButtons }){
 	const saves = await window.humanityProtocol.listSaves()
 	setHasSaves(saves.length > 0)
@@ -31,11 +39,12 @@ async function deleteSaveEntry({
 		return
 	}
 
+	await window.humanityProtocol.deleteSave(saveId)
+
 	if (currentSaveId === saveId) {
 		onDeleteCurrentSave()
 	}
 
-	await window.humanityProtocol.deleteSave(saveId)
 	await refreshSaveAvailability()
 
 	if (isLoadScreenVisible()) {
@@ -61,8 +70,14 @@ async function renderSaveList({ language, saveList, loadSave, deleteSave }){
 
 		loadButton.type = 'button'
 		loadButton.textContent = `${save.label} - ${new Date(save.updatedAt).toLocaleString(language)}`
-		loadButton.addEventListener('click', () => {
-			loadSave(save)
+		loadButton.addEventListener('click', async () => {
+			const fullSave = await loadSaveById(save.id)
+
+			if (!fullSave) {
+				return
+			}
+
+			loadSave(fullSave)
 		})
 
 		deleteButton.type = 'button'
@@ -79,6 +94,7 @@ async function renderSaveList({ language, saveList, loadSave, deleteSave }){
 window.humanityProtocolSaves = {
 	continueSavedRun,
 	deleteSaveEntry,
+	loadSaveById,
 	refreshSaveAvailability,
 	renderSaveList
 }

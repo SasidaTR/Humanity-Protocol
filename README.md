@@ -57,7 +57,7 @@ Les règles de temps et d'évolution du monde restent en cours d'itération. Le 
 - `docs/GAME_DESIGN.md` : vision de jeu, intentions, mécaniques, thèmes, outils et pistes de design
 - `docs/TOOLS.md` : cadre général du système d'outils
 - `docs/IDEOLOGIES.md` : base de travail pour convictions, idéologies et thèmes
-- `docs/CALIBRATION.md` : coefficients et calibrage numérique du prototype
+- `src/renderer/scripts/core/config.js` : valeurs de configuration réellement utilisées par le prototype
 - `docs/tools/` : fiches détaillées des outils
 
 ## Lancer le projet
