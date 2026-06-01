@@ -649,6 +649,7 @@ select:focus-visible {
 	font-size: 0.74rem;
 }
 
+
 @media (max-width: 900px) {
 	.universal-laws-details {
 		grid-template-columns: 1fr;

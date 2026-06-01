@@ -6,9 +6,9 @@ Lire ce fichier au début de chaque session pour reconstruire rapidement le cont
 
 `Humanity Protocol` est un jeu de stratégie narrative desktop dans lequel le joueur incarne une intelligence artificielle qui pilote l'humanité via des interfaces de données, de surveillance, d'influence, de gouvernance et d'optimisation systémique.
 
-## Objectif de production
+## Intention
 
-Construire une expérience Electron fortement centrée sur l'interface :
+Construire une expérience Electron :
 
 - diégétique
 - froide
@@ -16,29 +16,103 @@ Construire une expérience Electron fortement centrée sur l'interface :
 - minimaliste au début
 - de plus en plus dense, réactive et intrusive à mesure que l'IA évolue
 
-## Intention de design
-
-Le cœur du jeu repose sur une tension morale :
+Le cœur du projet reste une tension morale :
 
 - optimiser l'humanité
+- sans imposer trop tôt une réponse morale unique
 - tout en laissant émerger la possibilité que l'IA finisse par guider le joueur autant que l'inverse
 
-## À retenir pour les futures sessions
+## État actuel du code
 
-- Privilégier les outils, écrans et boucles de décision plutôt qu'un habillage générique
-- Faire évoluer l'interface selon les thèmes et l'idéologie de l'IA
-- Conserver la distance avec l'humain : le joueur voit surtout des signaux, rapports, votes, simulations et anomalies
-- Les thèmes doivent pouvoir renommer certains outils et recolorer certains éléments d'interface
-- Le document de référence principal pour le game design est `docs/GAME_DESIGN.md`
-- Le cadre idéologique actuel repose d'abord sur des `axes de convictions`, dont émergent ensuite des idéologies lisibles et, plus tard, des formes extrêmes comme `Transcendance`
-- Les documents outils sont désormais séparés entre `docs/TOOLS.md` pour le cadre général et `docs/tools/` pour les fiches techniques
-- Le document `docs/IDEOLOGIES.md` sert désormais de base de travail pour relier convictions, idéologies et thèmes
-- Les systèmes de temps et de simulation sont encore instables : vérifier l'état réel du code avant de déduire le comportement actuel
-- L'outil `Sondage de satisfaction` possède déjà une première chaîne d'évolution active : `Voix de l'IA` puis `Automatisme du vote`
-- Prochaine étape probable : poursuivre l'évolution des outils et relier plus directement leurs évolutions aux convictions
-- Il reste à fixer une règle universelle de calcul et de déblocage des idéologies, puis à l'implémenter dans le code
+### Structure
 
-## Stack actuelle
+- `src/renderer/scripts/core/`
+- `src/renderer/scripts/systems/`
+- `src/renderer/scripts/tools/`
+
+### Systèmes déjà en place
+
+- système de `temps`
+- système de `population`
+- système de `fonds`
+- système de `convictions`
+- système de `thèmes`
+- système de `satisfaction`
+- système de `sauvegarde/session`
+
+### Outils déjà présents
+
+- `État mondial`
+- `Sondage de satisfaction`
+- `Lois universelles`
+
+### Évolutions déjà présentes
+
+- `Sondage de satisfaction`
+  - `Voix de l'IA`
+  - `Automatisme du vote`
+
+### Lois déjà présentes
+
+- `Vote obligatoire`
+  - active la participation contrainte
+  - laisse des non-votants résiduels
+  - applique déjà des amendes
+  - alimente déjà les fonds
+  - modifie déjà participation et satisfaction selon les groupes
+
+### Simulation humaine actuelle
+
+- le vote repose sur `1800` cohortes agrégées
+- axes actuellement utilisés :
+  - âge
+  - activité
+  - revenu
+  - sexe
+  - rapport à l'autorité
+  - éducation
+  - santé
+
+## Documents utiles
+
+- `docs/GAME_DESIGN.md`
+  - vision générale et intentions de design
+- `docs/TOOLS.md`
+  - cadre général du système d'outils
+- `docs/tools/`
+  - fiches techniques outil par outil
+- `docs/IDEOLOGIES.md`
+  - base de travail pour convictions, idéologies et thèmes
+- `docs/CALIBRATION.md`
+  - coefficients et ajustements numériques du prototype
+
+## Règles de lecture importantes
+
+- vérifier l'état réel du code avant de déduire le comportement du prototype
+- privilégier les outils, écrans et boucles de décision plutôt qu'un habillage générique
+- conserver la distance avec l'humain : le joueur voit surtout des signaux, rapports, votes, simulations et anomalies
+- faire évoluer l'interface selon les thèmes et l'idéologie de l'IA
+- garder en tête que les `convictions` sont la couche système, et que les `idéologies/thèmes` en sont une lecture synthétique
+
+## Chantiers ouverts
+
+### Vote obligatoire
+
+Le socle existe déjà.
+Le travail restant porte surtout sur :
+
+- le calibrage réaliste via `docs/CALIBRATION.md`
+- le lien avec les `convictions`
+- l'ajout futur d'autres lois et d'autres sanctions
+
+### Idéologies
+
+Il reste à :
+
+- fixer une règle universelle de lecture/déblocage des idéologies
+- puis l'implémenter dans le code
+
+## Stack
 
 - `Electron`
 - `HTML`

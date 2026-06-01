@@ -18,7 +18,16 @@
 
 - seuls les humains adultes participent au vote
 - tous les humains éligibles ne votent pas
-- calcul par cohortes adultes
+- calcul par cohortes adultes agrégées
+- les cohortes croisent actuellement :
+  - âge
+  - activité
+  - niveau de revenu
+  - sexe
+  - rapport à l'autorité
+  - éducation
+  - santé
+- nombre actuel de cohortes de vote : `1800`
 - cycle de vote de référence :
   - durée maximale du vote humain courant
   - par défaut : `72` heures
@@ -26,7 +35,7 @@
 - chaque cohorte conserve des votes actifs pendant `24` heures
 - les votes actifs expirent puis rendent leurs porteurs à nouveau éligibles
 - chaque cohorte ajuste son rythme et ses tendances sur des cycles de `24` à `72` heures
-- taux de participation cible par cohorte borné entre `30%` et `95%`
+- taux de participation cible par cohorte borné entre `30%` et `100%`
 - fenêtre de validité d'un vote humain : `24` heures
 - votes calculés :
   - `satisfiedVotes`
@@ -55,8 +64,9 @@
   - calcul par cohortes adultes
   - seuls les `18+` votent
   - participation partielle des humains éligibles
+  - la capacité réelle à voter varie selon certains profils, surtout la santé
   - votes humains agrégés par groupes actifs avec expiration
-  - `nonVoters = population totale - totalVotes`
+  - `nonVoters = population éligible - totalVotes`
   - `eligibleVoters = population totale - population 0-17`
 - Temporalité :
   - calée sur le rythme réel du vote humain

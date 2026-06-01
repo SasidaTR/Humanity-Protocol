@@ -1,4 +1,7 @@
 (function(){
+	const MANDATORY_VOTE_FINE_AMOUNT = 135
+	const MANDATORY_VOTE_FINE_RATE_PER_WINDOW = 0.012
+
 	const LAW_DEFINITIONS = {
 		mandatoryVote: {
 			id: 'mandatoryVote',
@@ -13,7 +16,11 @@
 	const lawState = {
 		mandatoryVote: {
 			enabled: LAW_DEFINITIONS.mandatoryVote.defaultEnabled,
-			sanctionId: LAW_DEFINITIONS.mandatoryVote.sanctions[0]
+			sanctionId: LAW_DEFINITIONS.mandatoryVote.sanctions[0],
+			lastFineCount: 0,
+			lastFineRevenue: 0,
+			totalFineCount: 0,
+			totalFineRevenue: 0
 		}
 	}
 
@@ -27,6 +34,16 @@
 
 	function getLawDefinition(lawId){
 		return LAW_DEFINITIONS[lawId] || null
+	}
+
+	function refreshSurveyWithCurrentPopulation(){
+		const populationSnapshot = window.humanityProtocolPopulation?.getPopulationSummary?.()
+
+		if (!populationSnapshot || !window.humanityProtocolSatisfactionSurvey?.applyPopulationSnapshot) {
+			return
+		}
+
+		window.humanityProtocolSatisfactionSurvey.applyPopulationSnapshot(populationSnapshot, 0)
 	}
 
 	function createLawRow(lawId){
@@ -49,6 +66,7 @@
 			const state = getLawState(lawId)
 			state.enabled = checkbox.checked
 			window.humanityProtocolTools.recordToolMetric('universal-laws', `${lawId}ToggleCount`)
+			refreshSurveyWithCurrentPopulation()
 			renderUniversalLawsTool({ language: currentLanguage })
 		})
 
@@ -179,11 +197,15 @@
 
 	function buildSnapshot(){
 		return {
-			version: 2,
+			version: 3,
 			laws: Object.entries(lawState).reduce((snapshot, [lawId, state]) => {
 				snapshot[lawId] = {
 					enabled: Boolean(state.enabled),
-					sanctionId: state.sanctionId
+					sanctionId: state.sanctionId,
+					lastFineCount: Math.max(0, Math.round(Number(state.lastFineCount) || 0)),
+					lastFineRevenue: Math.max(0, Math.round(Number(state.lastFineRevenue) || 0)),
+					totalFineCount: Math.max(0, Math.round(Number(state.totalFineCount) || 0)),
+					totalFineRevenue: Math.max(0, Math.round(Number(state.totalFineRevenue) || 0))
 				}
 				return snapshot
 			}, {})
@@ -203,7 +225,11 @@
 
 			lawState[lawId] = {
 				enabled: Boolean(savedLaw?.enabled),
-				sanctionId: nextSanctionId
+				sanctionId: nextSanctionId,
+				lastFineCount: Math.max(0, Math.round(Number(savedLaw?.lastFineCount) || 0)),
+				lastFineRevenue: Math.max(0, Math.round(Number(savedLaw?.lastFineRevenue) || 0)),
+				totalFineCount: Math.max(0, Math.round(Number(savedLaw?.totalFineCount) || 0)),
+				totalFineRevenue: Math.max(0, Math.round(Number(savedLaw?.totalFineRevenue) || 0))
 			}
 		})
 	}
@@ -213,9 +239,59 @@
 			const definition = getLawDefinition(lawId)
 			lawState[lawId] = {
 				enabled: Boolean(definition.defaultEnabled),
-				sanctionId: definition.sanctions[0]
+				sanctionId: definition.sanctions[0],
+				lastFineCount: 0,
+				lastFineRevenue: 0,
+				totalFineCount: 0,
+				totalFineRevenue: 0
 			}
 		})
+	}
+
+	function applyMandatoryVoteConsequences({ nonVoters = 0, elapsedHours = 0, voteWindowHours = 24 } = {}){
+		const mandatoryVoteState = lawState.mandatoryVote
+		const boundedNonVoters = Math.max(0, Math.round(Number(nonVoters) || 0))
+		const boundedElapsedHours = Math.max(0, Number(elapsedHours) || 0)
+		const boundedVoteWindowHours = Math.max(1, Number(voteWindowHours) || 24)
+
+		mandatoryVoteState.lastFineCount = 0
+		mandatoryVoteState.lastFineRevenue = 0
+
+		if (!mandatoryVoteState.enabled || boundedNonVoters <= 0 || boundedElapsedHours <= 0) {
+			return {
+				fineCount: 0,
+				fineRevenue: 0
+			}
+		}
+
+		const windowFactor = boundedElapsedHours / boundedVoteWindowHours
+		const enforcementRate = MANDATORY_VOTE_FINE_RATE_PER_WINDOW * windowFactor
+		const fineCount = Math.min(
+			boundedNonVoters,
+			Math.max(
+				0,
+				Math.round(
+					boundedNonVoters *
+					enforcementRate *
+					(0.9 + (Math.random() * 0.2))
+				)
+			)
+		)
+		const fineRevenue = fineCount * MANDATORY_VOTE_FINE_AMOUNT
+
+		if (fineRevenue > 0) {
+			window.humanityProtocolFunds?.adjustFunds?.(fineRevenue)
+		}
+
+		mandatoryVoteState.lastFineCount = fineCount
+		mandatoryVoteState.lastFineRevenue = fineRevenue
+		mandatoryVoteState.totalFineCount += fineCount
+		mandatoryVoteState.totalFineRevenue += fineRevenue
+
+		return {
+			fineCount,
+			fineRevenue
+		}
 	}
 
 	window.humanityProtocolTools.registerTool({
@@ -228,8 +304,17 @@
 		render: renderUniversalLawsTool
 	})
 
-	window.humanityProtocolUniversalLawsTool = {
+window.humanityProtocolUniversalLawsTool = {
+		applyMandatoryVoteConsequences,
 		buildSnapshot,
+		getMandatoryVoteSummary: () => ({
+			enabled: lawState.mandatoryVote.enabled,
+			sanctionId: lawState.mandatoryVote.sanctionId,
+			lastFineCount: lawState.mandatoryVote.lastFineCount,
+			lastFineRevenue: lawState.mandatoryVote.lastFineRevenue,
+			totalFineCount: lawState.mandatoryVote.totalFineCount,
+			totalFineRevenue: lawState.mandatoryVote.totalFineRevenue
+		}),
 		isMandatoryVoteEnabled: () => lawState.mandatoryVote.enabled,
 		render: renderUniversalLawsTool,
 		resetState,

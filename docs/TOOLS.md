@@ -4,7 +4,7 @@
 
 Ce document décrit le cadre général du système d'outils.
 
-Les fiches détaillées sont séparées dans `tools/`.
+Les fiches détaillées sont séparées dans `docs/tools/`.
 
 ## Familles
 
@@ -108,12 +108,11 @@ Par défaut, les impacts sur les convictions sont `cumulatifs`.
 ## Format recommandé pour une fiche outil
 
 - `Identité`
-- `Données`
-- `Dépendances système`
+- `Interface affichée`
+- `Calculs internes`
+- `Systèmes utilisés`
 - `État initial`
-- `Architecture d'évolution`
-- `Impact convictions`
-- `Nœuds actuels`
+- `Évolutions actuelles` ou `Lois actuelles`
 - `Pistes futures`
 
 Format conseillé :
@@ -121,7 +120,7 @@ Format conseillé :
 - phrases minimales
 - listes courtes
 - valeurs chiffrées dès que possible
-- un nœud = une lecture rapide
+- une évolution ou une loi = une lecture rapide
 
 ## Fiches actuelles
 

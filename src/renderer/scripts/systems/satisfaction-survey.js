@@ -4,7 +4,7 @@ const ACTIVE_VOTE_DURATION_HOURS = 24
 const INITIAL_ACTIVE_VOTE_GROUPS = 12
 const TURNOUT_RATE_RANGE = {
 	min: 0.3,
-	max: 0.95
+	max: 1
 }
 const SATISFACTION_RATE_RANGE = {
 	min: 0.12,
@@ -118,6 +118,77 @@ const HEALTH_MODIFIERS = {
 const OPINION_NOISE = {
 	turnoutRate: 0.025,
 	satisfactionRate: 0.04
+}
+const MANDATORY_VOTE_BASE_TURNOUT_BONUS = 0.12
+const MANDATORY_VOTE_TURNOUT_MODIFIERS = {
+	age: {
+		age18To34: 0.03,
+		age35To64: 0,
+		age65Plus: -0.02
+	},
+	activity: {
+		workers: -0.01,
+		nonWorkers: 0.03,
+		none: 0
+	},
+	income: {
+		veryPoor: 0.05,
+		poor: 0.03,
+		middleIncome: 0,
+		comfortableIncome: -0.01,
+		highIncome: -0.03
+	},
+	authorityRelation: {
+		supportive: -0.04,
+		neutral: 0,
+		defiant: 0.06
+	},
+	education: {
+		low: 0.03,
+		medium: 0,
+		high: -0.02
+	},
+	health: {
+		healthy: 0,
+		mentalFragile: -0.02,
+		physicalFragile: -0.03,
+		dualFragile: -0.06
+	}
+}
+const MANDATORY_VOTE_SATISFACTION_MODIFIERS = {
+	age: {
+		age18To34: -0.015,
+		age35To64: -0.004,
+		age65Plus: 0.006
+	},
+	activity: {
+		workers: 0,
+		nonWorkers: -0.01,
+		none: 0
+	},
+	income: {
+		veryPoor: -0.04,
+		poor: -0.025,
+		middleIncome: -0.005,
+		comfortableIncome: 0,
+		highIncome: 0.005
+	},
+	authorityRelation: {
+		supportive: 0.01,
+		neutral: -0.004,
+		defiant: -0.06
+	},
+	education: {
+		low: -0.012,
+		medium: 0,
+		high: -0.004
+	},
+	health: {
+		healthy: 0,
+		mentalFragile: -0.02,
+		physicalFragile: -0.02,
+		dualFragile: -0.035
+	}
 }
 
 const surveyListeners = new Set()
@@ -332,6 +403,10 @@ function buildAdultCohorts(populationSnapshot){
 	const age = populationSnapshot?.age || {}
 	const incomeShares = getPopulationIncomeShares(populationSnapshot)
 	const activityShares = getWorkingAgeActivityShares(populationSnapshot)
+	const sexShares = getPopulationGroupedShares(populationSnapshot, 'sex', {
+		female: 0.5,
+		male: 0.5
+	})
 	const authorityRelationShares = getPopulationGroupedShares(populationSnapshot, 'authorityRelation', {
 		supportive: 0.27,
 		neutral: 0.46,
@@ -357,48 +432,55 @@ function buildAdultCohorts(populationSnapshot){
 
 	Object.entries(incomeShares).forEach(([incomeLevelId, incomeShare]) => {
 		Object.entries(activityShares).forEach(([activityId, activityShare]) => {
-			Object.entries(authorityRelationShares).forEach(([authorityRelationId, authorityRelationShare]) => {
-				Object.entries(educationShares).forEach(([educationId, educationShare]) => {
-					Object.entries(healthShares).forEach(([healthId, healthShare]) => {
-						const combinedShare = incomeShare * activityShare * authorityRelationShare * educationShare * healthShare
+			Object.entries(sexShares).forEach(([sexId, sexShare]) => {
+				Object.entries(authorityRelationShares).forEach(([authorityRelationId, authorityRelationShare]) => {
+					Object.entries(educationShares).forEach(([educationId, educationShare]) => {
+						Object.entries(healthShares).forEach(([healthId, healthShare]) => {
+							const combinedShare = incomeShare * activityShare * sexShare * authorityRelationShare * educationShare * healthShare
 
-						cohorts.push({
-							id: `age18To34:${activityId}:${incomeLevelId}:${authorityRelationId}:${educationId}:${healthId}`,
-							ageGroupId: 'age18To34',
-							activityId,
-							incomeLevelId,
-							authorityRelationId,
-							educationId,
-							healthId,
-							population: adultAgeCounts.age18To34 * combinedShare
-						})
-						cohorts.push({
-							id: `age35To64:${activityId}:${incomeLevelId}:${authorityRelationId}:${educationId}:${healthId}`,
-							ageGroupId: 'age35To64',
-							activityId,
-							incomeLevelId,
-							authorityRelationId,
-							educationId,
-							healthId,
-							population: adultAgeCounts.age35To64 * combinedShare
+							cohorts.push({
+								id: `age18To34:${activityId}:${incomeLevelId}:${sexId}:${authorityRelationId}:${educationId}:${healthId}`,
+								ageGroupId: 'age18To34',
+								activityId,
+								incomeLevelId,
+								sexId,
+								authorityRelationId,
+								educationId,
+								healthId,
+								population: adultAgeCounts.age18To34 * combinedShare
+							})
+							cohorts.push({
+								id: `age35To64:${activityId}:${incomeLevelId}:${sexId}:${authorityRelationId}:${educationId}:${healthId}`,
+								ageGroupId: 'age35To64',
+								activityId,
+								incomeLevelId,
+								sexId,
+								authorityRelationId,
+								educationId,
+								healthId,
+								population: adultAgeCounts.age35To64 * combinedShare
+							})
 						})
 					})
 				})
 			})
 		})
 
-		Object.entries(authorityRelationShares).forEach(([authorityRelationId, authorityRelationShare]) => {
-			Object.entries(educationShares).forEach(([educationId, educationShare]) => {
-				Object.entries(healthShares).forEach(([healthId, healthShare]) => {
-					cohorts.push({
-						id: `age65Plus:none:${incomeLevelId}:${authorityRelationId}:${educationId}:${healthId}`,
-						ageGroupId: 'age65Plus',
-						activityId: 'none',
-						incomeLevelId,
-						authorityRelationId,
-						educationId,
-						healthId,
-						population: adultAgeCounts.age65Plus * incomeShare * authorityRelationShare * educationShare * healthShare
+		Object.entries(sexShares).forEach(([sexId, sexShare]) => {
+			Object.entries(authorityRelationShares).forEach(([authorityRelationId, authorityRelationShare]) => {
+				Object.entries(educationShares).forEach(([educationId, educationShare]) => {
+					Object.entries(healthShares).forEach(([healthId, healthShare]) => {
+						cohorts.push({
+							id: `age65Plus:none:${incomeLevelId}:${sexId}:${authorityRelationId}:${educationId}:${healthId}`,
+							ageGroupId: 'age65Plus',
+							activityId: 'none',
+							incomeLevelId,
+							sexId,
+							authorityRelationId,
+							educationId,
+							healthId,
+							population: adultAgeCounts.age65Plus * incomeShare * sexShare * authorityRelationShare * educationShare * healthShare
+						})
 					})
 				})
 			})
@@ -415,6 +497,13 @@ function buildCohortTarget(cohort, baselineSatisfaction){
 	const authorityRelationModifiers = AUTHORITY_RELATION_MODIFIERS[cohort.authorityRelationId] || AUTHORITY_RELATION_MODIFIERS.neutral
 	const educationModifiers = EDUCATION_MODIFIERS[cohort.educationId] || EDUCATION_MODIFIERS.medium
 	const healthModifiers = HEALTH_MODIFIERS[cohort.healthId] || HEALTH_MODIFIERS.healthy
+	const mandatoryVoteEnabled = window.humanityProtocolUniversalLawsTool?.isMandatoryVoteEnabled?.()
+	const mandatoryVoteBonus = mandatoryVoteEnabled
+		? getMandatoryVoteTurnoutBonus(cohort)
+		: 0
+	const mandatoryVoteSatisfactionModifier = mandatoryVoteEnabled
+		? getMandatoryVoteSatisfactionModifier(cohort)
+		: 0
 	const worldMoodOffset = (baselineSatisfaction - INITIAL_WORLD_SATISFACTION) / 100
 
 	return {
@@ -426,6 +515,7 @@ function buildCohortTarget(cohort, baselineSatisfaction){
 			authorityRelationModifiers.turnoutRate +
 			educationModifiers.turnoutRate +
 			healthModifiers.turnoutRate +
+			mandatoryVoteBonus +
 			(worldMoodOffset * 0.08),
 			TURNOUT_RATE_RANGE.min,
 			TURNOUT_RATE_RANGE.max
@@ -437,6 +527,7 @@ function buildCohortTarget(cohort, baselineSatisfaction){
 			authorityRelationModifiers.satisfactionRate +
 			educationModifiers.satisfactionRate +
 			healthModifiers.satisfactionRate +
+			mandatoryVoteSatisfactionModifier +
 			(worldMoodOffset * 0.3),
 			SATISFACTION_RATE_RANGE.min,
 			SATISFACTION_RATE_RANGE.max
@@ -447,6 +538,27 @@ function buildCohortTarget(cohort, baselineSatisfaction){
 function getCohortSatisfactionNoise(targetRate){
 	const varianceFactor = getSatisfactionVarianceFactor(targetRate)
 	return OPINION_NOISE.satisfactionRate * (0.18 + (varianceFactor * 0.82))
+}
+
+function getMandatoryVoteTurnoutBonus(cohort){
+	return MANDATORY_VOTE_BASE_TURNOUT_BONUS +
+		(MANDATORY_VOTE_TURNOUT_MODIFIERS.age[cohort.ageGroupId] || 0) +
+		(MANDATORY_VOTE_TURNOUT_MODIFIERS.activity[cohort.activityId] || 0) +
+		(MANDATORY_VOTE_TURNOUT_MODIFIERS.income[cohort.incomeLevelId] || 0) +
+		(MANDATORY_VOTE_TURNOUT_MODIFIERS.authorityRelation[cohort.authorityRelationId] || 0) +
+		(MANDATORY_VOTE_TURNOUT_MODIFIERS.education[cohort.educationId] || 0) +
+		(MANDATORY_VOTE_TURNOUT_MODIFIERS.health[cohort.healthId] || 0)
+}
+
+function getMandatoryVoteSatisfactionModifier(cohort){
+	return (
+		(MANDATORY_VOTE_SATISFACTION_MODIFIERS.age[cohort.ageGroupId] || 0) +
+		(MANDATORY_VOTE_SATISFACTION_MODIFIERS.activity[cohort.activityId] || 0) +
+		(MANDATORY_VOTE_SATISFACTION_MODIFIERS.income[cohort.incomeLevelId] || 0) +
+		(MANDATORY_VOTE_SATISFACTION_MODIFIERS.authorityRelation[cohort.authorityRelationId] || 0) +
+		(MANDATORY_VOTE_SATISFACTION_MODIFIERS.education[cohort.educationId] || 0) +
+		(MANDATORY_VOTE_SATISFACTION_MODIFIERS.health[cohort.healthId] || 0)
+	)
 }
 
 function createCohortState(target){
@@ -613,11 +725,17 @@ function applyPopulationSnapshot(populationSnapshot, elapsedHours = 0){
 	surveyState.ineligiblePopulation = ineligiblePopulation
 	surveyState.satisfiedVotes = boundedSatisfiedVotes
 	surveyState.dissatisfiedVotes = Math.max(0, boundedTotalVotes - boundedSatisfiedVotes)
-	surveyState.nonVoters = Math.max(0, totalPopulation - boundedTotalVotes)
+	surveyState.nonVoters = Math.max(0, eligibleVoters - boundedTotalVotes)
 	surveyState.turnoutRate = eligibleVoters > 0
 		? clamp(boundedTotalVotes / eligibleVoters, 0, 1)
 		: INITIAL_TURNOUT_RATE
 	surveyState.lastUpdatedAt = Date.now()
+
+	window.humanityProtocolUniversalLawsTool?.applyMandatoryVoteConsequences?.({
+		elapsedHours,
+		nonVoters: surveyState.nonVoters,
+		voteWindowHours: surveyState.voteWindowHours
+	})
 
 	notifySurveyListeners()
 	return buildSurveySnapshot()

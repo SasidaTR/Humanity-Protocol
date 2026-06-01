@@ -22,6 +22,19 @@ function notifyFundsListeners(){
 	})
 }
 
+function adjustFunds(delta){
+	const boundedDelta = Math.round(Number(delta) || 0)
+
+	if (boundedDelta === 0) {
+		return buildFundsSnapshot()
+	}
+
+	fundsState.available = Math.max(0, fundsState.available + boundedDelta)
+	fundsState.lastUpdatedAt = Date.now()
+	notifyFundsListeners()
+	return buildFundsSnapshot()
+}
+
 function resetFunds(){
 	fundsState.available = INITIAL_AVAILABLE_FUNDS
 	fundsState.lastUpdatedAt = Date.now()
@@ -50,6 +63,7 @@ function subscribe(listener){
 }
 
 window.humanityProtocolFunds = {
+	adjustFunds,
 	buildFundsSnapshot,
 	getFundsSummary: buildFundsSnapshot,
 	resetFunds,

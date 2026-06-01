@@ -31,11 +31,21 @@ Le dépôt contient actuellement un prototype Electron simple avec une structure
 - `src/renderer` : interface, scripts et styles
 - `src/shared` : constantes partagées
 
+Dans `src/renderer/scripts`, la structure est désormais séparée entre :
+
+- `core/` : session, menu, thèmes, outils, debug, i18n
+- `systems/` : temps, population, satisfaction, fonds, convictions
+- `tools/` : implémentations des outils de jeu
+
 Le prototype contient déjà une base de simulation et d'interface pour :
 
 - un panneau d'état mondial fenêtré et déplaçable
 - un outil visuel de vote de satisfaction
+- un outil `Lois universelles` avec une première loi visuelle `Vote obligatoire`
 - un sondage de satisfaction calculé par cohortes adultes
+- une simulation de vote fondée sur des cohortes agrégées croisant âge, activité, revenu, sexe, rapport à l'autorité, éducation et santé
+- un premier système de `convictions`
+- un premier système de `thèmes`
 - une simulation temporelle continue avec vitesses `pause`, `x1`, `x2`, `x4`
 - un système de debug permettant d'activer des outils et leurs évolutions en cours de partie
 
@@ -46,6 +56,8 @@ Les règles de temps et d'évolution du monde restent en cours d'itération. Le 
 - `AGENTS.md` : résumé opérationnel à lire au début d'une session
 - `docs/GAME_DESIGN.md` : vision de jeu, intentions, mécaniques, thèmes, outils et pistes de design
 - `docs/TOOLS.md` : cadre général du système d'outils
+- `docs/IDEOLOGIES.md` : base de travail pour convictions, idéologies et thèmes
+- `docs/CALIBRATION.md` : coefficients et calibrage numérique du prototype
 - `docs/tools/` : fiches détaillées des outils
 
 ## Lancer le projet

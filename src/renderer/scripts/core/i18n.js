@@ -76,6 +76,12 @@ const translations = {
 		},
 		universalLaws: {
 			title: 'Lois universelles',
+			stats: {
+				remainingNonVoters: 'Non-votants restants',
+				lastFines: 'Dernières amendes',
+				totalFines: 'Total des amendes',
+				fundsGain: 'Recettes'
+			},
 			laws: {
 				mandatoryVote: {
 					name: 'Vote obligatoire',
@@ -167,6 +173,12 @@ const translations = {
 		},
 		universalLaws: {
 			title: 'Universal Laws',
+			stats: {
+				remainingNonVoters: 'Remaining non-voters',
+				lastFines: 'Latest fines',
+				totalFines: 'Total fines',
+				fundsGain: 'Revenue'
+			},
 			laws: {
 				mandatoryVote: {
 					name: 'Mandatory voting',

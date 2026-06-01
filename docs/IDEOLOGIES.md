@@ -13,12 +13,10 @@
 ## Règle technique minimale
 
 - une idéologie repose sur plusieurs convictions
-- chaque idéologie a :
+- chaque idéologie doit au moins préciser :
   - des `convictions requises`
-  - un `score minimum`
-- une idéologie n'est lisible que si :
-  - toutes les convictions requises atteignent leur seuil
-  - le score final atteint le score minimum
+  - des `seuils` ou une autre règle de lecture à définir
+- la règle universelle de calcul n'est pas encore figée
 
 ## Convictions actuelles
 
