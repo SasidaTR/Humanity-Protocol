@@ -1,5 +1,4 @@
 const surveyConfig = window.humanityProtocolConfig?.survey || {}
-const mandatoryVoteConfig = window.humanityProtocolConfig?.laws?.mandatoryVote || {}
 const INITIAL_TURNOUT_RATE = surveyConfig.initialTurnoutRate ?? 0.62
 const INITIAL_WORLD_SATISFACTION = surveyConfig.initialWorldSatisfaction ?? 60
 const ACTIVE_VOTE_DURATION_HOURS = surveyConfig.activeVoteDurationHours ?? 24
@@ -27,9 +26,7 @@ const OPINION_NOISE = surveyConfig.opinionNoise || {
 	turnoutRate: 0.025,
 	satisfactionRate: 0.04
 }
-const MANDATORY_VOTE_BASE_TURNOUT_BONUS = mandatoryVoteConfig.baseTurnoutBonus ?? 0.12
-const MANDATORY_VOTE_TURNOUT_MODIFIERS = mandatoryVoteConfig.turnoutModifiers || {}
-const MANDATORY_VOTE_SATISFACTION_MODIFIERS = mandatoryVoteConfig.satisfactionModifiers || {}
+const MS_PER_DAY = 24 * 60 * 60 * 1000
 
 const surveyListeners = new Set()
 
@@ -40,7 +37,9 @@ const surveyState = {
 	eligibleVoters: 0,
 	ineligiblePopulation: 0,
 	turnoutRate: INITIAL_TURNOUT_RATE,
+	livedSatisfaction: INITIAL_WORLD_SATISFACTION,
 	voteWindowHours: VOTE_WINDOW_HOURS,
+	lastVoteSlot: null,
 	lastUpdatedAt: Date.now(),
 	cohorts: {}
 }
@@ -337,29 +336,27 @@ function buildCohortTarget(cohort, baselineSatisfaction){
 	const authorityRelationModifiers = AUTHORITY_RELATION_MODIFIERS[cohort.authorityRelationId] || AUTHORITY_RELATION_MODIFIERS.neutral
 	const educationModifiers = EDUCATION_MODIFIERS[cohort.educationId] || EDUCATION_MODIFIERS.medium
 	const healthModifiers = HEALTH_MODIFIERS[cohort.healthId] || HEALTH_MODIFIERS.healthy
-	const mandatoryVoteEnabled = window.humanityProtocolUniversalLawsTool?.isMandatoryVoteEnabled?.()
-	const mandatoryVoteBonus = mandatoryVoteEnabled
-		? getMandatoryVoteTurnoutBonus(cohort)
-		: 0
-	const mandatoryVoteSatisfactionModifier = mandatoryVoteEnabled
-		? getMandatoryVoteSatisfactionModifier(cohort)
-		: 0
 	const worldMoodOffset = (baselineSatisfaction - INITIAL_WORLD_SATISFACTION) / 100
+	const livingConditions = window.humanityProtocolLivingConditions
+	const conditionImpact = livingConditions?.getCohortImpact?.(cohort)
+	const spontaneousTurnoutRate = clamp(
+		ageProfile.turnoutRate +
+		activityModifiers.turnoutRate +
+		incomeModifiers.turnoutRate +
+		authorityRelationModifiers.turnoutRate +
+		educationModifiers.turnoutRate +
+		healthModifiers.turnoutRate +
+		(worldMoodOffset * 0.08),
+		TURNOUT_RATE_RANGE.min,
+		TURNOUT_RATE_RANGE.max
+	)
+	const expressedTurnoutRate = conditionImpact
+		? livingConditions.applyVoiceToTurnout(spontaneousTurnoutRate, cohort, conditionImpact.voice)
+		: spontaneousTurnoutRate
 
 	return {
 		votingCapacityRate: clamp(healthModifiers.votingCapacityRate, 0.45, 1),
-		turnoutRate: clamp(
-			ageProfile.turnoutRate +
-			activityModifiers.turnoutRate +
-			incomeModifiers.turnoutRate +
-			authorityRelationModifiers.turnoutRate +
-			educationModifiers.turnoutRate +
-			healthModifiers.turnoutRate +
-			mandatoryVoteBonus +
-			(worldMoodOffset * 0.08),
-			TURNOUT_RATE_RANGE.min,
-			TURNOUT_RATE_RANGE.max
-		),
+		turnoutRate: clamp(expressedTurnoutRate, TURNOUT_RATE_RANGE.min, TURNOUT_RATE_RANGE.max),
 		satisfactionRate: clamp(
 			ageProfile.satisfactionRate +
 			activityModifiers.satisfactionRate +
@@ -367,7 +364,7 @@ function buildCohortTarget(cohort, baselineSatisfaction){
 			authorityRelationModifiers.satisfactionRate +
 			educationModifiers.satisfactionRate +
 			healthModifiers.satisfactionRate +
-			mandatoryVoteSatisfactionModifier +
+			(conditionImpact?.satisfactionDelta || 0) +
 			(worldMoodOffset * 0.3),
 			SATISFACTION_RATE_RANGE.min,
 			SATISFACTION_RATE_RANGE.max
@@ -380,25 +377,21 @@ function getCohortSatisfactionNoise(targetRate){
 	return OPINION_NOISE.satisfactionRate * (0.18 + (varianceFactor * 0.82))
 }
 
-function getMandatoryVoteTurnoutBonus(cohort){
-	return MANDATORY_VOTE_BASE_TURNOUT_BONUS +
-		(MANDATORY_VOTE_TURNOUT_MODIFIERS.age[cohort.ageGroupId] || 0) +
-		(MANDATORY_VOTE_TURNOUT_MODIFIERS.activity[cohort.activityId] || 0) +
-		(MANDATORY_VOTE_TURNOUT_MODIFIERS.income[cohort.incomeLevelId] || 0) +
-		(MANDATORY_VOTE_TURNOUT_MODIFIERS.authorityRelation[cohort.authorityRelationId] || 0) +
-		(MANDATORY_VOTE_TURNOUT_MODIFIERS.education[cohort.educationId] || 0) +
-		(MANDATORY_VOTE_TURNOUT_MODIFIERS.health[cohort.healthId] || 0)
+function getFixedVoteHourLaw(){
+	const summary = window.humanityProtocolUniversalLawsTool?.getFixedVoteHourSummary?.()
+
+	return {
+		enabled: Boolean(summary?.enabled),
+		hour: Math.max(0, Math.min(23, Math.round(Number(summary?.voteHour) || 0)))
+	}
 }
 
-function getMandatoryVoteSatisfactionModifier(cohort){
-	return (
-		(MANDATORY_VOTE_SATISFACTION_MODIFIERS.age[cohort.ageGroupId] || 0) +
-		(MANDATORY_VOTE_SATISFACTION_MODIFIERS.activity[cohort.activityId] || 0) +
-		(MANDATORY_VOTE_SATISFACTION_MODIFIERS.income[cohort.incomeLevelId] || 0) +
-		(MANDATORY_VOTE_SATISFACTION_MODIFIERS.authorityRelation[cohort.authorityRelationId] || 0) +
-		(MANDATORY_VOTE_SATISFACTION_MODIFIERS.education[cohort.educationId] || 0) +
-		(MANDATORY_VOTE_SATISFACTION_MODIFIERS.health[cohort.healthId] || 0)
+function getVoteSlotIndex(timestamp, lawHour){
+	const date = new Date(timestamp)
+	const dayIndex = Math.round(
+		new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime() / MS_PER_DAY
 	)
+	return dayIndex + (date.getHours() >= lawHour ? 1 : 0)
 }
 
 function createCohortState(target){
@@ -419,7 +412,7 @@ function createCohortState(target){
 	}
 }
 
-function reconcileCohortState(cohortState, target, population, elapsedHours){
+function reconcileCohortState(cohortState, target, population, elapsedHours, canCastVotes = true){
 	const effectivePopulation = Math.max(
 		0,
 		population * clamp(Number(target.votingCapacityRate) || 1, 0.45, 1)
@@ -475,7 +468,7 @@ function reconcileCohortState(cohortState, target, population, elapsedHours){
 		targetActiveVotes - voteSummary.totalVotes
 	))
 
-	if (additionalVotes > 0) {
+	if (additionalVotes > 0 && canCastVotes) {
 		nextCohortState.activeVoteGroups = appendVoteGroup(
 			nextCohortState.activeVoteGroups,
 			additionalVotes,
@@ -507,6 +500,8 @@ function buildSurveySnapshot(){
 		ineligiblePopulation: surveyState.ineligiblePopulation,
 		turnoutRate: roundPercentage(surveyState.turnoutRate * 100),
 		satisfaction,
+		livedSatisfaction: surveyState.livedSatisfaction,
+		measurementBias: roundPercentage(satisfaction - surveyState.livedSatisfaction),
 		voteWindowHours: surveyState.voteWindowHours,
 		maxCohortVoteIntervalHours: COHORT_VOTE_INTERVAL_HOURS.max,
 		lastUpdatedAt: surveyState.lastUpdatedAt,
@@ -519,6 +514,30 @@ function notifySurveyListeners(){
 	surveyListeners.forEach((listener) => {
 		listener(snapshot)
 	})
+}
+
+function canCastVotesDuringStep(){
+	const fixedVoteHourLaw = getFixedVoteHourLaw()
+
+	if (!fixedVoteHourLaw.enabled) {
+		surveyState.lastVoteSlot = null
+		return true
+	}
+
+	const currentTimestamp = Number(window.humanityProtocolTime?.getTimeSummary?.()?.timestamp) || Date.now()
+	const slotIndex = getVoteSlotIndex(currentTimestamp, fixedVoteHourLaw.hour)
+	const previousSlot = surveyState.lastVoteSlot
+
+	surveyState.lastVoteSlot = {
+		hour: fixedVoteHourLaw.hour,
+		index: slotIndex
+	}
+
+	if (!previousSlot || previousSlot.hour !== fixedVoteHourLaw.hour) {
+		return false
+	}
+
+	return slotIndex > previousSlot.index
 }
 
 function applyPopulationSnapshot(populationSnapshot, elapsedHours = 0){
@@ -541,20 +560,25 @@ function applyPopulationSnapshot(populationSnapshot, elapsedHours = 0){
 	}
 
 	const cohorts = buildAdultCohorts(populationSnapshot)
+	const canCastVotes = canCastVotesDuringStep()
 	let satisfiedVotes = 0
 	let totalVotes = 0
+	let livedSatisfactionWeight = 0
+	let livedSatisfactionTotal = 0
 	const nextCohorts = {}
 
 	cohorts.forEach((cohort) => {
 		const target = buildCohortTarget(cohort, baselineSatisfaction)
 		const baseCohortState = surveyState.cohorts[cohort.id] || createCohortState(target)
 		const population = Math.max(0, cohort.population)
-		const cohortState = reconcileCohortState(baseCohortState, target, population, elapsedHours)
+		const cohortState = reconcileCohortState(baseCohortState, target, population, elapsedHours, canCastVotes)
 		const voteSummary = summarizeVoteGroups(cohortState.activeVoteGroups)
 
 		nextCohorts[cohort.id] = cohortState
 		satisfiedVotes += voteSummary.satisfiedVotes
 		totalVotes += voteSummary.totalVotes
+		livedSatisfactionTotal += population * cohortState.satisfactionRate
+		livedSatisfactionWeight += population
 	})
 
 	const boundedTotalVotes = Math.min(eligibleVoters, totalVotes)
@@ -569,6 +593,9 @@ function applyPopulationSnapshot(populationSnapshot, elapsedHours = 0){
 	surveyState.turnoutRate = eligibleVoters > 0
 		? clamp(boundedTotalVotes / eligibleVoters, 0, 1)
 		: INITIAL_TURNOUT_RATE
+	surveyState.livedSatisfaction = livedSatisfactionWeight > 0
+		? roundPercentage((livedSatisfactionTotal / livedSatisfactionWeight) * 100)
+		: INITIAL_WORLD_SATISFACTION
 	surveyState.lastUpdatedAt = Date.now()
 
 	window.humanityProtocolUniversalLawsTool?.applyMandatoryVoteConsequences?.({

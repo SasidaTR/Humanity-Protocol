@@ -38,6 +38,7 @@ Le cœur du projet reste une tension morale :
 - système de `convictions`
 - système de `thèmes`
 - système de `satisfaction`
+- système de `conditions de vie`
 - système de `sauvegarde/session`
 
 ### Outils déjà présents
@@ -63,6 +64,15 @@ Le cœur du projet reste une tension morale :
   - applique déjà des amendes
   - alimente déjà les fonds
   - modifie déjà participation et satisfaction selon les groupes
+  - déplace les convictions vers le primat du collectif
+
+- `Heure de vote imposée`
+  - ouvre le scrutin une seule heure par jour
+  - heure choisie par le joueur parmi 24 créneaux
+  - le monde s'adapte à l'heure, l'heure ne s'adapte pas au monde
+  - le coût dépend de l'écart au rythme naturel de chaque cohorte et de la dureté de l'heure choisie
+  - ne rapporte rien seule, mais alimente les amendes du `Vote obligatoire`
+  - premier impact de conviction porté par une loi
 
 ### Simulation humaine actuelle
 
@@ -86,6 +96,8 @@ Le cœur du projet reste une tension morale :
   - fiches techniques outil par outil
 - `docs/IDEOLOGIES.md`
   - base de travail pour convictions, idéologies et thèmes
+- `docs/LIVING_CONDITIONS.md`
+  - comment les lois agissent sur la population, et comment ajouter une loi
 - `src/renderer/scripts/core/config.js`
   - valeurs de configuration réellement utilisées par le prototype
 
@@ -106,14 +118,27 @@ Le cœur du projet reste une tension morale :
 
 ## Chantiers ouverts
 
-### Vote obligatoire
+### Conditions de vie
 
-Le socle existe déjà.
+Les lois n'écrivent plus de tables démographiques.
+Elles écrivent quelques valeurs sur sept axes de condition, et les cohortes portent les sensibilités.
+
+Points à retenir :
+
+- une cohorte ne juge jamais une loi, seulement ses conditions de vie
+- les interactions entre lois sont émergentes, jamais écrites
+- `satisfaction` et `expression` sont deux dimensions séparées
+- le sondage expose `livedSatisfaction` (le monde) et `satisfaction` (ce que l'IA mesure)
+- seul le second doit être montré au joueur
+
+### Lois universelles
+
+Deux lois existent désormais.
 Le travail restant porte surtout sur :
 
 - le calibrage réaliste via `src/renderer/scripts/core/config.js`
-- le lien avec les `convictions`
-- l'ajout futur d'autres lois et d'autres sanctions
+- une troisième loi, pour faire émerger la bonne abstraction du registre de lois
+- les `compatibilités` et `exclusivités` entre lois, encore inexistantes
 
 ### Idéologies
 

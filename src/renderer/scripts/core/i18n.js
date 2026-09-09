@@ -101,6 +101,10 @@ const translations = {
 					sanctions: {
 						fine: 'Amende'
 					}
+				},
+				fixedVoteHour: {
+					name: 'Heure de vote imposée',
+					effect: "Le scrutin n'est ouvert qu'une heure par jour. Les retardataires attendent le lendemain."
 				}
 			}
 		},
@@ -210,6 +214,10 @@ const translations = {
 					sanctions: {
 						fine: 'Fine'
 					}
+				},
+				fixedVoteHour: {
+					name: 'Fixed voting hour',
+					effect: 'The vote opens one hour per day. Latecomers wait until the next day.'
 				}
 			}
 		},

@@ -42,9 +42,11 @@ Le prototype contient déjà une base de simulation et d'interface pour :
 - un panneau d'état mondial fenêtré et déplaçable
 - un premier niveau de détail debugable sur l'état mondial
 - un outil visuel de vote de satisfaction
-- un outil `Lois universelles` avec une première loi visuelle `Vote obligatoire`
+- un outil `Lois universelles` avec deux lois visuelles `Vote obligatoire` et `Heure de vote imposée`
 - un sondage de satisfaction calculé par cohortes adultes
 - une simulation de vote fondée sur des cohortes agrégées croisant âge, activité, revenu, sexe, rapport à l'autorité, éducation et santé
+- un système de `conditions de vie` qui traduit les lois en effets sur la population
+- une distinction entre la satisfaction réellement vécue et celle que l'IA parvient à mesurer
 - un premier système de `convictions`
 - un premier système de `thèmes`
 - un mode d'apparence `système`, `clair` ou `sombre`
@@ -59,6 +61,7 @@ Les règles de temps et d'évolution du monde restent en cours d'itération. Le 
 - `docs/GAME_DESIGN.md` : vision de jeu, intentions, mécaniques, thèmes, outils et pistes de design
 - `docs/TOOLS.md` : cadre général du système d'outils
 - `docs/IDEOLOGIES.md` : base de travail pour convictions, idéologies et thèmes
+- `docs/LIVING_CONDITIONS.md` : comment les lois agissent sur la population
 - `src/renderer/scripts/core/config.js` : valeurs de configuration réellement utilisées par le prototype
 - `docs/tools/` : fiches détaillées des outils
 

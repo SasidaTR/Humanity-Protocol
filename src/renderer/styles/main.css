@@ -756,6 +756,10 @@ select:focus-visible {
 	text-align: right;
 }
 
+.universal-laws-detail-group[hidden] {
+	display: none;
+}
+
 .universal-laws-name {
 	color: var(--color-text);
 	font-size: 0.84rem;

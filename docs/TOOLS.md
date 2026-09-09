@@ -124,6 +124,7 @@ Format conseillé :
 
 ## Fiches actuelles
 
+- [Conditions de vie](LIVING_CONDITIONS.md)
 - [Index des fiches](tools/README.md)
 - [Sondage de satisfaction](tools/satisfaction-vote.md)
 - [État mondial](tools/world-status.md)
