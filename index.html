@@ -48,6 +48,14 @@
             </select>
           </div>
           <div>
+            <label for="rate-period-select" data-i18n="settings.ratePeriod"></label>
+            <select id="rate-period-select">
+              <option value="month" data-i18n="settings.ratePeriodMonth"></option>
+              <option value="week" data-i18n="settings.ratePeriodWeek"></option>
+              <option value="day" data-i18n="settings.ratePeriodDay"></option>
+            </select>
+          </div>
+          <div>
             <label for="simulation-interval-select" data-i18n="settings.simulationInterval"></label>
             <select id="simulation-interval-select">
               <option value="0.0166666667">1 min</option>
@@ -95,6 +103,7 @@
     <script src="src/renderer/scripts/systems/convictions.js"></script>
     <script src="src/renderer/scripts/core/tools.js"></script>
     <script src="src/renderer/scripts/core/debug-state.js"></script>
+    <script src="src/renderer/scripts/systems/world-economy.js"></script>
     <script src="src/renderer/scripts/systems/living-conditions.js"></script>
     <script src="src/renderer/scripts/systems/world-time.js"></script>
     <script src="src/renderer/scripts/systems/population.js"></script>

@@ -123,6 +123,149 @@
 - effet faible sur les groupes déjà très votants
 - le résultat du sondage gagne en volume mais pas nécessairement en adhésion
 
+#### Revenu garanti
+
+- Type : `Gestion économique`
+- Activation :
+  - loi activable manuellement par le joueur
+- Paramètre :
+  - montant versé par adulte et par mois, de `0` à `1200`
+  - la référence est le **salaire moyen mensuel**, fixé à `1200` dans `config.economy`
+  - l'affichage se convertit en mois, semaine ou jour selon le réglage `Affichage des montants`
+- Effet :
+  - verse un revenu à chaque adulte, en continu, au prorata des heures écoulées
+  - premier levier **positif** du jeu
+- Empreinte sur les conditions :
+  - `income` `+9 × gain relatif × couverture`
+  - `ease` `+3.5 × gain relatif × couverture`
+  - le `gain relatif` est le montant annuel rapporté au revenu réel de la cohorte, plafonné à `2.5`
+- Sanction :
+  - aucune
+- Impact sur les convictions :
+  - `happinessComfort` `+5`
+  - `groupPriority` `+3`
+  - `humanIncompetence` `+2`
+  - appliqué une seule fois, à la première activation
+
+##### Redistribution automatique
+
+Le gain est calculé **par rapport au revenu de la cohorte**, jamais en valeur absolue.
+
+- `200 / mois` triple plus que le revenu d'un `veryPoor`, qui gagne `60 / mois`
+- le même montant représente `2,7 %` du revenu d'un `highIncome`, qui gagne `7 500 / mois`
+
+Aucune règle de redistribution n'est écrite. Elle découle du rapport entre le versement et ce que la cohorte possède déjà, puis de sa sensibilité à `income` (`2.5` pour les plus pauvres, `0.3` pour les plus riches).
+
+##### Faillite
+
+Le versement est **borné par la caisse**. Si les fonds ne suffisent pas, la couverture tombe sous `100 %` et la part non versée bascule sur `shortfallConditions` :
+
+- `income` `−6`
+- `predictability` `−4`
+- `security` `−3`
+
+La promesse rompue coûte donc plus cher que l'aide n'a rapporté.
+
+Simulation à `900 / mois` sans aucun impôt, caisse de départ `1` mille milliards :
+
+| Jour | Caisse | Couverture | Satisfaction vécue |
+| --- | --- | --- | --- |
+| départ | `1,00` | — | `52,3` |
+| `1` à `5` | fond | `100 %` | `55,3` |
+| `6` | `0` | `0 %` | `47,8` |
+| `7` | `0` | `0 %` | `39,9` |
+| `8` | `0` | `0 %` | `34,2` |
+
+L'IA améliore la vie pendant cinq jours, puis la population retombe bien plus bas qu'avant l'aide.
+
+Il n'existe aucune règle de catastrophe. La chute vient de l'axe `predictability` et de `security` qui s'effondrent en même temps que le revenu.
+
+##### Équilibre avec l'impôt
+
+| Montant mensuel | Part du salaire moyen | Coût annuel | Impôt nécessaire |
+| --- | --- | --- | --- |
+| `100` | `8 %` | `7,5` mille Md | `~12 %` |
+| `200` | `17 %` | `15,1` mille Md | `~25 %` |
+| `400` | `33 %` | `30,1` mille Md | `~50 %` |
+| `1200` | `100 %` | `90,4` mille Md | impossible |
+
+Verser le salaire moyen entier dépasse la base taxable du monde. La caisse se vide en quelques jours et la satisfaction chute de `19,6` points.
+
+##### Effets mesurés
+
+| Scénario | Satisfaction vécue | Caisse après 7 jours |
+| --- | --- | --- |
+| aucune loi | `0` | `1,00` |
+| `100 / mois` | `+1,6` | `0,85` |
+| `200 / mois` | `+2,0` | `0,71` |
+| `200 / mois` + impôt `25 %` | `+1,9` | `1,11` |
+| `1200 / mois` | `-19,6` | `0,00` |
+
+Seule la ligne financée par l'impôt laisse la caisse **remonter**. C'est le seul état durable.
+
+#### Impôt sur le revenu
+
+- Type : `Gestion économique`
+- Activation :
+  - loi activable manuellement par le joueur
+- Paramètre :
+  - taux de `0 %` à `100 %`, par pas de `5`
+- Effet :
+  - prélève une part des revenus, en continu, au prorata des heures écoulées
+  - barème **progressif** : le taux réel dépend du niveau de vie
+- Barème :
+  - `veryPoor` `×0` — exonérés
+  - `poor` `×0.5`
+  - `middleIncome` `×1`
+  - `comfortableIncome` `×1.4`
+  - `highIncome` `×1.8`
+- Empreinte sur les conditions :
+  - `income` `−16 × taux réellement payé par la cohorte`
+  - `security` `+0.6` — l'État existe, donc il protège
+- Sanction :
+  - aucune
+- Impact sur les convictions :
+  - `groupPriority` `+4`
+  - `individualPriority` `-3`
+  - `progressCooperation` `+2`
+  - appliqué une seule fois, à la première activation
+
+##### L'économie du monde
+
+Cette loi introduit la première base économique du jeu.
+
+Chaque niveau de vie porte un revenu annuel (`economy.annualIncomeByLevel`), modulé par l'activité et l'âge. La somme sur toutes les cohortes donne la base taxable.
+
+- base mesurée : `58,9` mille milliards par an
+- avant cette loi, la seule recette du monde était l'amende de vote
+
+##### Effets mesurés
+
+Simulation sur 7 jours.
+
+| Taux | Recettes sur 7 jours | Coût en satisfaction vécue |
+| --- | --- | --- |
+| `0 %` | `0` | `0` |
+| `20 %` | `0,32` mille Md | `-0,7` |
+| `40 %` | `0,64` mille Md | `-2,4` |
+| `50 %` | `0,80` mille Md | `-3,6` |
+| `75 %` | `1,01` mille Md | `-6,4` |
+| `100 %` | `1,06` mille Md | `-9,5` |
+
+Doubler le taux fait plus que tripler la douleur : c'est la réponse convexe des [conditions de vie](../LIVING_CONDITIONS.md) sur une perte.
+
+##### Le plafond des recettes
+
+Les recettes saturent bien avant le taux maximum. Passer de `50 %` à `100 %` ne rapporte que `32 %` de plus, mais coûte trois fois plus de satisfaction.
+
+La cause est le barème : le taux réel est borné à `100 %`, et les hautes tranches sont déjà confisquées intégralement dès `56 %`. Au-delà, l'IA ne peut plus prélever que sur les tranches basses, celles qui possèdent peu et qui sont les plus sensibles au revenu.
+
+C'est une courbe de Laffer mécanique. Elle rend le taux maximum ouvertement mauvais, sans qu'aucune règle ne l'interdise.
+
+##### Douleur et progressivité
+
+Un impôt faible reste presque indolore. Les `veryPoor`, les plus sensibles au revenu, sont exonérés ; les `highIncome`, les plus taxés, y sont trois fois moins sensibles. C'est exactement l'effet d'un barème progressif, et il sort du modèle sans être écrit nulle part.
+
 #### Heure de vote imposée
 
 - Type : `Contrainte`
@@ -208,10 +351,40 @@ Trois choses à retenir.
 
 La combinaison la plus dure, `obligatoire + 3h`, rapporte `32,1 M€/h` et coûte `6,6` points de satisfaction vécue. L'IA se finance sur une contrainte qu'elle a elle-même posée, en sanctionnant des gens qu'elle a empêchés de voter.
 
+### Lois décidées, non implémentées
+
+#### Couvre-feu
+
+- Type : `Contrainte`
+- Activation :
+  - loi activable manuellement par le joueur
+- Paramètre :
+  - à définir : plage horaire d'interdiction de sortie
+- Effet :
+  - personne ne sort la nuit
+  - les métiers nécessaires continuent de fonctionner : sécurité, soins, maintenance
+  - il n'y a donc **aucune perte de revenu** pour le travail de nuit
+- Empreinte sur les conditions :
+  - `liberty` `−`
+  - `security` `+`
+  - `ease` `−` léger, pour les cohortes soumises au contrôle nocturne
+- Sanction :
+  - à définir
+
+##### Pourquoi cette loi
+
+C'est le premier vrai dilemme du jeu : la même loi rend un groupe plus heureux et un autre plus malheureux.
+
+- gagnants : `age65Plus` (sensibilité `1.6` à `security`), `supportive` (`1.4`), cohortes fragiles
+- perdants : `age18To34` (sensibilité `1.2` à `liberty`), `defiant` (`2.2`)
+
+La satisfaction moyenne bouge peu. Ce sont les extrêmes qui se séparent.
+
+Elle active aussi l'axe `security`, resté vierge jusqu'ici — donc elle permet enfin d'observer les rendements décroissants sur les gains.
+
 ### Pistes futures
 
 - `Contrainte`
-  - couvre-feu
   - limitation de consommation
 - `Gestion humaine`
   - accès prioritaire à certains soins

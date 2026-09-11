@@ -42,7 +42,9 @@ Le prototype contient déjà une base de simulation et d'interface pour :
 - un panneau d'état mondial fenêtré et déplaçable
 - un premier niveau de détail debugable sur l'état mondial
 - un outil visuel de vote de satisfaction
-- un outil `Lois universelles` avec deux lois visuelles `Vote obligatoire` et `Heure de vote imposée`
+- un outil `Lois universelles` avec quatre lois `Vote obligatoire`, `Heure de vote imposée`, `Impôt sur le revenu` et `Revenu garanti`
+- une base économique mondiale normalisée sur un salaire moyen de référence
+- un réglage d'affichage des montants par mois, semaine ou jour
 - un sondage de satisfaction calculé par cohortes adultes
 - une simulation de vote fondée sur des cohortes agrégées croisant âge, activité, revenu, sexe, rapport à l'autorité, éducation et santé
 - un système de `conditions de vie` qui traduit les lois en effets sur la population

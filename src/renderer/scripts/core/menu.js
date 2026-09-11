@@ -18,6 +18,7 @@ const fullscreenCheckbox = document.querySelector('#fullscreen-checkbox')
 const skipIntroCheckbox = document.querySelector('#skip-intro-checkbox')
 const languageSelect = document.querySelector('#language-select')
 const appearanceModeSelect = document.querySelector('#appearance-mode-select')
+const ratePeriodSelect = document.querySelector('#rate-period-select')
 const simulationIntervalSelect = document.querySelector('#simulation-interval-select')
 const debugThemeSelect = document.querySelector('#debug-theme-select')
 const debugToolsList = document.querySelector('#debug-tools-list')
@@ -200,12 +201,14 @@ async function loadSettings(){
 	gameState.settings = settings
 	window.humanityProtocolI18n.applyTranslations(settings.language)
 	window.humanityProtocolTheme.applyAppearanceMode(settings.appearanceMode)
+	window.humanityProtocolEconomy.setRatePeriod(settings.ratePeriod)
 	window.humanityProtocolTime.setSimulationStepHours(settings.simulationStepHours)
 	window.humanityProtocolTools.renderTools({ language: settings.language })
 	fullscreenCheckbox.checked = settings.startFullscreen
 	skipIntroCheckbox.checked = settings.skipIntroOnNewGame === true
 	languageSelect.value = settings.language
 	appearanceModeSelect.value = settings.appearanceMode
+	ratePeriodSelect.value = settings.ratePeriod
 	simulationIntervalSelect.value = String(settings.simulationStepHours)
 	syncDebugControls()
 	return settings
@@ -393,6 +396,17 @@ appearanceModeSelect.addEventListener('change', async () => {
 
 	window.humanityProtocolTheme.applyAppearanceMode(settings.appearanceMode)
 	appearanceModeSelect.value = settings.appearanceMode
+	gameState.settings = settings
+})
+
+ratePeriodSelect.addEventListener('change', async () => {
+	const settings = await window.humanityProtocol.updateSettings({
+		ratePeriod: ratePeriodSelect.value
+	})
+
+	window.humanityProtocolEconomy.setRatePeriod(settings.ratePeriod)
+	ratePeriodSelect.value = settings.ratePeriod
+	window.humanityProtocolTools.renderTools({ language: settings.language })
 	gameState.settings = settings
 })
 

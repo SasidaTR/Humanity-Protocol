@@ -1,6 +1,16 @@
 const populationConfig = window.humanityProtocolConfig?.population || {}
 const INITIAL_WORLD_POPULATION = populationConfig.initialWorldPopulation ?? 8_000_000_000
 const INITIAL_SATISFACTION = populationConfig.initialSatisfaction ?? 60
+const SATISFACTION_FOLLOW_RATE = populationConfig.satisfactionFollowRate ?? 0.012
+const SATISFACTION_NOISE = populationConfig.satisfactionNoise ?? 0.25
+const INCOME_MOBILITY_RATE = populationConfig.incomeMobilityRate ?? 0.00008
+const INCOME_MOBILITY_DEAD_ZONE = populationConfig.incomeMobilityDeadZone ?? 0.08
+const INCOME_MOBILITY_MAX_PULL = populationConfig.incomeMobilityMaxPull ?? 1.5
+const COLLAPSE_THRESHOLD = populationConfig.collapseThreshold ?? 35
+const COLLAPSE_EXPONENT = populationConfig.collapseExponent ?? 1.6
+const COLLAPSE_WEIGHT = populationConfig.collapseWeight ?? 0.002
+const DEATH_RATE_RANGE = populationConfig.deathRateRange || { min: 0.7, max: 2.2 }
+const BIRTH_RATE_RANGE = populationConfig.birthRateRange || { min: 0.4, max: 1.25 }
 const FEMALE_SHARE_OSCILLATION_RANGE = populationConfig.femaleShareOscillationRange ?? 0.008
 const WORKER_SHARE_OSCILLATION_RANGE = populationConfig.workerShareOscillationRange ?? 0.08
 const HOURS_PER_YEAR = populationConfig.hoursPerYear ?? (365.25 * 24)
@@ -470,6 +480,58 @@ function notifyPopulationListeners(){
 	})
 }
 
+function stepIncomeMobility(stepHours){
+	const economy = window.humanityProtocolEconomy
+
+	if (!economy?.getNetMonthlyIncomeForLevel || stepHours <= 0) {
+		return
+	}
+
+	const incomeLevelIds = Object.keys(INCOME_LEVEL_GROUPS)
+	const nextShares = { ...populationState.demographics.incomeLevel }
+	let hasMoved = false
+
+	incomeLevelIds.forEach((incomeLevelId, index) => {
+		const grossMonthlyIncome = economy.getMonthlyIncomeForLevel(incomeLevelId)
+
+		if (grossMonthlyIncome <= 0) {
+			return
+		}
+
+		const netMonthlyIncome = economy.getNetMonthlyIncomeForLevel(incomeLevelId)
+		const incomeRatio = netMonthlyIncome / grossMonthlyIncome
+		const currentShare = populationState.demographics.incomeLevel[incomeLevelId] || 0
+
+		if (currentShare <= 0) {
+			return
+		}
+
+		const upperLevelId = incomeLevelIds[index + 1]
+		const lowerLevelId = incomeLevelIds[index - 1]
+
+		if (incomeRatio > 1 + INCOME_MOBILITY_DEAD_ZONE && upperLevelId) {
+			const pull = Math.min(INCOME_MOBILITY_MAX_PULL, incomeRatio - 1)
+			const movedShare = currentShare * INCOME_MOBILITY_RATE * pull * stepHours
+			nextShares[incomeLevelId] -= movedShare
+			nextShares[upperLevelId] += movedShare
+			hasMoved = true
+			return
+		}
+
+		if (incomeRatio < 1 - INCOME_MOBILITY_DEAD_ZONE && lowerLevelId) {
+			const pull = Math.min(INCOME_MOBILITY_MAX_PULL, 1 - incomeRatio)
+			const movedShare = currentShare * INCOME_MOBILITY_RATE * pull * stepHours
+			nextShares[incomeLevelId] -= movedShare
+			nextShares[lowerLevelId] += movedShare
+			hasMoved = true
+		}
+	})
+
+	if (hasMoved) {
+		populationState.demographics.incomeLevel = normalizeIncomeLevelShares(nextShares)
+	}
+}
+
 function stepSimulation(stepHours = 1){
 	const normalizedStepHours = Math.max(0, Number(stepHours) || 0)
 	const femaleShareOffset = populationState.demographics.sex.female - 0.5
@@ -478,18 +540,18 @@ function stepSimulation(stepHours = 1){
 	const youngAdultOutflow = ageCounts.age18To34 * normalizedStepHours / (AGE_GROUPS.age18To34.durationYears * HOURS_PER_YEAR)
 	const matureAdultOutflow = ageCounts.age35To64 * normalizedStepHours / (AGE_GROUPS.age35To64.durationYears * HOURS_PER_YEAR)
 
-	const lowSatisfactionRecovery = populationState.satisfaction < 18
-		? ((18 - populationState.satisfaction) * 0.05)
-		: 0
-	const highSatisfactionCooling = populationState.satisfaction > 82
-		? ((populationState.satisfaction - 82) * 0.05)
-		: 0
+	const livedSatisfaction = Number(
+		window.humanityProtocolSatisfactionSurvey?.getSurveySummary?.()?.livedSatisfaction
+	)
+	const satisfactionTarget = Number.isFinite(livedSatisfaction)
+		? livedSatisfaction
+		: populationState.satisfaction
+	const satisfactionGap = satisfactionTarget - populationState.satisfaction
 
 	populationState.trend.satisfactionDelta = clamp(
-		(populationState.trend.satisfactionDelta * 0.92) +
-		lowSatisfactionRecovery -
-		highSatisfactionCooling +
-		((Math.random() - 0.5) * 1.35),
+		(populationState.trend.satisfactionDelta * 0.88) +
+		(satisfactionGap * SATISFACTION_FOLLOW_RATE * normalizedStepHours) +
+		((Math.random() - 0.5) * SATISFACTION_NOISE),
 		-2.4,
 		2.4
 	)
@@ -515,18 +577,28 @@ function stepSimulation(stepHours = 1){
 	)
 
 	const targetDeaths = TARGET_EVENTS_PER_HOUR * normalizedStepHours
+	const collapseDepth = Math.max(0, COLLAPSE_THRESHOLD - populationState.satisfaction)
+	const collapsePressure = collapseDepth > 0
+		? Math.pow(collapseDepth, COLLAPSE_EXPONENT) * COLLAPSE_WEIGHT
+		: 0
 	const deathBalanceRate = clamp(
-		1 + populationState.trend.deathBalanceDelta + ((INITIAL_SATISFACTION - populationState.satisfaction) * 0.004),
-		0.75,
-		1.25
+		1 +
+		populationState.trend.deathBalanceDelta +
+		((INITIAL_SATISFACTION - populationState.satisfaction) * 0.004) +
+		collapsePressure,
+		DEATH_RATE_RANGE.min,
+		DEATH_RATE_RANGE.max
 	)
 	const seniorDeathCapacity = Math.max(1, ageCounts.age65Plus + matureAdultOutflow)
 	const deaths = Math.min(seniorDeathCapacity, targetDeaths * deathBalanceRate)
 	const targetBirths = TARGET_EVENTS_PER_HOUR * normalizedStepHours
 	const birthBalanceRate = clamp(
-		1 + populationState.trend.birthBalanceDelta + ((populationState.satisfaction - INITIAL_SATISFACTION) * 0.004),
-		0.75,
-		1.25
+		1 +
+		populationState.trend.birthBalanceDelta +
+		((populationState.satisfaction - INITIAL_SATISFACTION) * 0.004) -
+		(collapsePressure * 0.6),
+		BIRTH_RATE_RANGE.min,
+		BIRTH_RATE_RANGE.max
 	)
 	const births = targetBirths * birthBalanceRate
 	const nextAgeCounts = {
@@ -556,6 +628,7 @@ function stepSimulation(stepHours = 1){
 		populationState.trend.workerShareDelta +
 		((populationState.satisfaction - INITIAL_SATISFACTION) * 0.0006)
 	)
+	stepIncomeMobility(normalizedStepHours)
 	populationState.demographics.sex = normalizeSexShares(
 		populationState.demographics.sex.female + populationState.trend.femaleShareDelta
 	)

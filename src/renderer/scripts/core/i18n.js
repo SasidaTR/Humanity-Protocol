@@ -21,6 +21,10 @@ const translations = {
 			appearanceSystem: 'Système',
 			appearanceLight: 'Clair',
 			appearanceDark: 'Sombre',
+			ratePeriod: 'Affichage des montants',
+			ratePeriodMonth: 'Par mois',
+			ratePeriodWeek: 'Par semaine',
+			ratePeriodDay: 'Par jour',
 			simulationInterval: "Pas d'actualisation du monde (heures de jeu)",
 			languageFr: 'Français',
 			languageEn: 'Anglais',
@@ -94,6 +98,11 @@ const translations = {
 				totalFines: 'Total des amendes',
 				fundsGain: 'Recettes'
 			},
+			periods: {
+				month: '/ mois',
+				week: '/ semaine',
+				day: '/ jour'
+			},
 			laws: {
 				mandatoryVote: {
 					name: 'Vote obligatoire',
@@ -101,6 +110,14 @@ const translations = {
 					sanctions: {
 						fine: 'Amende'
 					}
+				},
+				basicIncome: {
+					name: 'Revenu garanti',
+					effect: "Un revenu est versé à chaque adulte. Si les fonds manquent, le versement est réduit d'autant."
+				},
+				incomeTax: {
+					name: 'Impôt sur le revenu',
+					effect: "Une part des revenus est prélevée. Le taux réel augmente avec le niveau de vie."
 				},
 				fixedVoteHour: {
 					name: 'Heure de vote imposée',
@@ -134,6 +151,10 @@ const translations = {
 			appearanceSystem: 'System',
 			appearanceLight: 'Light',
 			appearanceDark: 'Dark',
+			ratePeriod: 'Amount display',
+			ratePeriodMonth: 'Per month',
+			ratePeriodWeek: 'Per week',
+			ratePeriodDay: 'Per day',
 			simulationInterval: 'World refresh step (game hours)',
 			languageFr: 'French',
 			languageEn: 'English',
@@ -207,6 +228,11 @@ const translations = {
 				totalFines: 'Total fines',
 				fundsGain: 'Revenue'
 			},
+			periods: {
+				month: '/ month',
+				week: '/ week',
+				day: '/ day'
+			},
 			laws: {
 				mandatoryVote: {
 					name: 'Mandatory voting',
@@ -214,6 +240,14 @@ const translations = {
 					sanctions: {
 						fine: 'Fine'
 					}
+				},
+				basicIncome: {
+					name: 'Guaranteed income',
+					effect: 'Every adult receives an income. If funds run short, the payment shrinks accordingly.'
+				},
+				incomeTax: {
+					name: 'Income tax',
+					effect: 'A share of income is levied. The effective rate rises with living standards.'
 				},
 				fixedVoteHour: {
 					name: 'Fixed voting hour',

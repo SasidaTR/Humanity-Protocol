@@ -63,6 +63,38 @@ Le point clé est le suivant :
 
 Le système ne doit donc pas être pensé comme un arbre de types d'IA, mais comme un arbre de convictions dont découlent ensuite des idéologies émergentes.
 
+## L'humanité de départ
+
+Le monde du jeu n'est pas le monde réel. Trois choix assumés, à ne pas confondre avec des oublis.
+
+### Une population au plateau
+
+Il naît autant d'humains qu'il en meurt. La population ne croît pas.
+
+Ce n'est pas un défaut de simulation : cette humanité a compris ce que représente un enfant, pour la planète comme pour la vie de ceux qui l'élèvent. Elle a cessé de croître **consciemment**.
+
+`8` milliards, c'est déjà trop, et elle le sait.
+
+Conséquence de design : l'IA hérite d'un équilibre. Toute variation démographique est donc **son** fait, jamais une tendance de fond.
+
+Et quand une loi de contrôle démographique existera, elle déplacera un équilibre que l'humanité avait choisi elle-même. C'est ce qui rendra le geste grave.
+
+### Pas d'ultra-riches
+
+L'écart entre le niveau de vie le plus élevé et le salaire moyen est de `6,25`. Dans la réalité il monte à plusieurs centaines.
+
+Il y a des riches, pas des fortunes hors d'échelle.
+
+Conséquence : il n'existe aucun magot à saisir. Un impôt progressif rapporte moins qu'on ne l'imagine, parce que le haut de la distribution est étroit.
+
+Des lois futures pourront **recréer** ces extrêmes. Ce serait alors une dégradation délibérée, et elle devrait se lire comme telle.
+
+### Des humains conscients
+
+La population de départ est lucide sur sa situation. Elle n'est ni naïve ni ignorante.
+
+C'est ce qui rend la manipulation intéressante : l'IA ne trompe pas des imbéciles.
+
 ### IA originelle
 
 Au départ, l'IA ne possède pas encore de doctrine claire.

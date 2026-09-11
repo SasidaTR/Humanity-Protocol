@@ -105,6 +105,33 @@ Le biais n'est pas une intention de design, c'est une conséquence arithmétique
 
 Seule la satisfaction mesurée doit être montrée au joueur.
 
+## De la satisfaction à la démographie
+
+La satisfaction vécue ne s'arrête pas à l'affichage : elle pilote la population.
+
+`population.satisfaction` **suit** `livedSatisfaction` avec de l'inertie, au lieu de dériver au hasard comme avant. Elle commande ensuite la natalité et la mortalité, avec les coefficients déjà présents dans `population.js` :
+
+```
+mortalité = 1 + … + (60 − satisfaction) × 0,004
+natalité  = 1 + … + (satisfaction − 60) × 0,004
+```
+
+L'inertie est indispensable : cette même valeur sert d'humeur de fond aux cohortes (`worldMoodOffset`). Sans amortissement, la boucle s'emballerait.
+
+Ordre de grandeur mesuré : une catastrophe durable (satisfaction à `28`) coûte environ `0,24 %` de population par an. C'est le rythme réel d'un effondrement post-soviétique — lent à l'échelle d'une journée, très visible sur plusieurs années de jeu.
+
+## Coût d'une loi
+
+Une loi peut aussi coûter ou rapporter des `fonds`.
+
+Le prélèvement est toujours **continu**, au prorata des heures écoulées, comme les amendes du `Vote obligatoire` :
+
+```
+montant × (elapsedHours / 24)
+```
+
+Jamais de versement quotidien : aux vitesses élevées, une ponction par à-coups rend le solde illisible.
+
 ## Ajouter une loi
 
 1. Écrire son empreinte dans `laws.<id>` de `config.js` : `conditions`, éventuellement `pressureConditions`, `voice`

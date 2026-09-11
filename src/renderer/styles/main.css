@@ -751,7 +751,7 @@ select:focus-visible {
 	min-width: 0;
 }
 
-.universal-laws-detail-group:last-child {
+.universal-laws-detail-group.is-control {
 	justify-items: end;
 	text-align: right;
 }
@@ -796,7 +796,7 @@ select:focus-visible {
 		gap: 0.75rem;
 	}
 
-	.universal-laws-detail-group:last-child {
+	.universal-laws-detail-group.is-control {
 		justify-items: start;
 		text-align: left;
 	}

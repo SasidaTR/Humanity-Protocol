@@ -3,6 +3,22 @@
 		population: {
 			initialWorldPopulation: 8_000_000_000,
 			initialSatisfaction: 60,
+			satisfactionFollowRate: 0.001,
+			satisfactionNoise: 0.01,
+			incomeMobilityRate: 0.00008,
+			incomeMobilityDeadZone: 0.08,
+			incomeMobilityMaxPull: 1.5,
+			collapseThreshold: 35,
+			collapseExponent: 1.6,
+			collapseWeight: 0.002,
+			deathRateRange: {
+				min: 0.7,
+				max: 2.2
+			},
+			birthRateRange: {
+				min: 0.4,
+				max: 1.25
+			},
 			femaleShareOscillationRange: 0.008,
 			workerShareOscillationRange: 0.08,
 			hoursPerYear: 365.25 * 24,
@@ -185,6 +201,34 @@
 				satisfactionRate: 0.04
 			}
 		},
+		economy: {
+			hoursPerYear: 8766,
+			monthsPerYear: 12,
+			daysPerMonth: 30,
+			averageMonthlyIncome: 1200,
+			incomeMultiplierByLevel: {
+				veryPoor: 0.05,
+				poor: 0.21,
+				middleIncome: 0.83,
+				comfortableIncome: 2.08,
+				highIncome: 6.25
+			},
+			ratePeriods: {
+				month: 1,
+				week: 7 / 30,
+				day: 1 / 30
+			},
+			activityIncomeFactor: {
+				workers: 1,
+				nonWorkers: 0.4,
+				none: 0.4
+			},
+			ageIncomeFactor: {
+				age18To34: 0.8,
+				age35To64: 1.15,
+				age65Plus: 0.6
+			}
+		},
 		livingConditions: {
 			escalatingExponent: 1.6,
 			diminishingExponent: 0.7,
@@ -239,6 +283,40 @@
 			}
 		},
 		laws: {
+			basicIncome: {
+				defaultMonthlyAmount: 0,
+				availableMonthlyAmounts: [0, 25, 50, 100, 150, 200, 300, 400, 600, 800, 1200],
+				relativeGainCap: 2.5,
+				gainConditions: {
+					income: 9,
+					ease: 3.5
+				},
+				shortfallConditions: {
+					income: -6,
+					predictability: -4,
+					security: -3
+				}
+			},
+			incomeTax: {
+				defaultRate: 0,
+				availableRates: [
+					0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50,
+					55, 60, 65, 70, 75, 80, 85, 90, 95, 100
+				],
+				bracketFactors: {
+					veryPoor: 0,
+					poor: 0.5,
+					middleIncome: 1,
+					comfortableIncome: 1.4,
+					highIncome: 1.8
+				},
+				rateConditions: {
+					income: -16
+				},
+				conditions: {
+					security: 0.6
+				}
+			},
 			fixedVoteHour: {
 				defaultHour: 12,
 				maxHourDistance: 12,

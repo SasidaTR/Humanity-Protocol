@@ -1,4 +1,5 @@
 const surveyConfig = window.humanityProtocolConfig?.survey || {}
+
 const INITIAL_TURNOUT_RATE = surveyConfig.initialTurnoutRate ?? 0.62
 const INITIAL_WORLD_SATISFACTION = surveyConfig.initialWorldSatisfaction ?? 60
 const ACTIVE_VOTE_DURATION_HOURS = surveyConfig.activeVoteDurationHours ?? 24
@@ -38,6 +39,7 @@ const surveyState = {
 	ineligiblePopulation: 0,
 	turnoutRate: INITIAL_TURNOUT_RATE,
 	livedSatisfaction: INITIAL_WORLD_SATISFACTION,
+	taxableIncome: 0,
 	voteWindowHours: VOTE_WINDOW_HOURS,
 	lastVoteSlot: null,
 	lastUpdatedAt: Date.now(),
@@ -329,6 +331,14 @@ function buildAdultCohorts(populationSnapshot){
 	return cohorts
 }
 
+function getCohortAnnualIncome(cohort, population){
+	if (population <= 0) {
+		return 0
+	}
+
+	return population * (window.humanityProtocolEconomy?.getCohortAnnualIncome?.(cohort) || 0)
+}
+
 function buildCohortTarget(cohort, baselineSatisfaction){
 	const ageProfile = AGE_VOTER_PROFILES[cohort.ageGroupId]
 	const activityModifiers = ACTIVITY_VOTER_MODIFIERS[cohort.activityId] || ACTIVITY_VOTER_MODIFIERS.none
@@ -501,6 +511,7 @@ function buildSurveySnapshot(){
 		turnoutRate: roundPercentage(surveyState.turnoutRate * 100),
 		satisfaction,
 		livedSatisfaction: surveyState.livedSatisfaction,
+		taxableIncome: surveyState.taxableIncome,
 		measurementBias: roundPercentage(satisfaction - surveyState.livedSatisfaction),
 		voteWindowHours: surveyState.voteWindowHours,
 		maxCohortVoteIntervalHours: COHORT_VOTE_INTERVAL_HOURS.max,
@@ -565,6 +576,8 @@ function applyPopulationSnapshot(populationSnapshot, elapsedHours = 0){
 	let totalVotes = 0
 	let livedSatisfactionWeight = 0
 	let livedSatisfactionTotal = 0
+	let taxableIncome = 0
+	const taxableIncomeByLevel = {}
 	const nextCohorts = {}
 
 	cohorts.forEach((cohort) => {
@@ -579,6 +592,13 @@ function applyPopulationSnapshot(populationSnapshot, elapsedHours = 0){
 		totalVotes += voteSummary.totalVotes
 		livedSatisfactionTotal += population * cohortState.satisfactionRate
 		livedSatisfactionWeight += population
+
+		const cohortAnnualIncome = getCohortAnnualIncome(cohort, population)
+
+		if (cohortAnnualIncome > 0) {
+			taxableIncomeByLevel[cohort.incomeLevelId] = (taxableIncomeByLevel[cohort.incomeLevelId] || 0) + cohortAnnualIncome
+			taxableIncome += cohortAnnualIncome
+		}
 	})
 
 	const boundedTotalVotes = Math.min(eligibleVoters, totalVotes)
@@ -593,10 +613,21 @@ function applyPopulationSnapshot(populationSnapshot, elapsedHours = 0){
 	surveyState.turnoutRate = eligibleVoters > 0
 		? clamp(boundedTotalVotes / eligibleVoters, 0, 1)
 		: INITIAL_TURNOUT_RATE
+	surveyState.taxableIncome = taxableIncome
 	surveyState.livedSatisfaction = livedSatisfactionWeight > 0
 		? roundPercentage((livedSatisfactionTotal / livedSatisfactionWeight) * 100)
 		: INITIAL_WORLD_SATISFACTION
 	surveyState.lastUpdatedAt = Date.now()
+
+	window.humanityProtocolUniversalLawsTool?.applyIncomeTaxConsequences?.({
+		elapsedHours,
+		taxableIncomeByLevel
+	})
+
+	window.humanityProtocolUniversalLawsTool?.applyBasicIncomeConsequences?.({
+		elapsedHours,
+		eligiblePopulation: eligibleVoters
+	})
 
 	window.humanityProtocolUniversalLawsTool?.applyMandatoryVoteConsequences?.({
 		elapsedHours,

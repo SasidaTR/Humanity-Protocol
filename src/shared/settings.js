@@ -12,6 +12,7 @@ const defaultSettings = {
 	startFullscreen: true,
 	language: 'fr',
 	appearanceMode: 'system',
+	ratePeriod: 'month',
 	skipIntroOnNewGame: false,
 	simulationStepHours: 1,
 	debug: {
@@ -28,11 +29,15 @@ function mergeSettings(settings = {}){
 	const nextAppearanceMode = ['system', 'light', 'dark'].includes(settings.appearanceMode)
 		? settings.appearanceMode
 		: defaultSettings.appearanceMode
+	const nextRatePeriod = ['month', 'week', 'day'].includes(settings.ratePeriod)
+		? settings.ratePeriod
+		: defaultSettings.ratePeriod
 
 	return {
 		...defaultSettings,
 		...settings,
 		appearanceMode: nextAppearanceMode,
+		ratePeriod: nextRatePeriod,
 		simulationStepHours: nextSimulationStepHours ?? defaultSettings.simulationStepHours,
 		debug: {
 			...defaultSettings.debug,

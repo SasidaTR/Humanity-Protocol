@@ -39,6 +39,7 @@ Le cœur du projet reste une tension morale :
 - système de `thèmes`
 - système de `satisfaction`
 - système de `conditions de vie`
+- système d'`économie` (revenus normalisés, périodes d'affichage)
 - système de `sauvegarde/session`
 
 ### Outils déjà présents
@@ -115,6 +116,11 @@ Le cœur du projet reste une tension morale :
 - conserver la distance avec l'humain : le joueur voit surtout des signaux, rapports, votes, simulations et anomalies
 - faire évoluer l'interface selon les thèmes et l'idéologie de l'IA
 - garder en tête que les `convictions` sont la couche système, et que les `idéologies/thèmes` en sont une lecture synthétique
+- ne pas « corriger » les écarts volontaires avec le monde réel, décrits dans `docs/GAME_DESIGN.md` :
+  - la population est au plateau, autant de naissances que de morts, par choix de l'humanité
+  - il n'existe pas d'ultra-riches, l'écart maximal au salaire moyen est de `6,25`
+  - la population de départ est lucide, pas ignorante
+- en revanche l'effondrement reste possible : sous une satisfaction de `35`, la mortalité s'emballe et la natalité chute
 
 ## Chantiers ouverts
 
@@ -129,16 +135,33 @@ Points à retenir :
 - les interactions entre lois sont émergentes, jamais écrites
 - `satisfaction` et `expression` sont deux dimensions séparées
 - le sondage expose `livedSatisfaction` (le monde) et `satisfaction` (ce que l'IA mesure)
+- `livedSatisfaction` pilote désormais la démographie : la satisfaction du monde la suit avec inertie, et commande natalité et mortalité
 - seul le second doit être montré au joueur
 
 ### Lois universelles
 
-Deux lois existent désormais.
-Le travail restant porte surtout sur :
+Quatre lois sont implémentées : `Vote obligatoire`, `Heure de vote imposée`, `Impôt sur le revenu` et `Revenu garanti`.
+
+La monnaie du jeu est normalisée : le **salaire moyen mensuel** vaut `1200` dans `config.economy`, et chaque niveau de vie est un multiple de cette référence. Tous les montants de loi s'expriment par mois ; le réglage `Affichage des montants` les convertit en semaine ou en jour sans changer la valeur stockée.
+
+`Revenu garanti` est le premier levier positif du jeu, et le premier à pouvoir mettre l'IA en faillite : si la caisse est vide, la couverture tombe et la population s'effondre plus bas qu'avant l'aide.
+
+`Impôt sur le revenu` apporte la première base économique du monde : chaque niveau de vie porte un revenu annuel dans `config.economy`, et la somme sur les cohortes donne la base taxable (`58,9` mille milliards par an).
+
+Une loi est décidée mais pas encore codée, décrite dans `docs/tools/universal-laws.md` :
+
+- `Couvre-feu`
+  - premier vrai dilemme : gagnants et perdants sur la même loi
+  - pas de perte de revenu, les métiers nécessaires tournent la nuit
+
+Le travail restant porte aussi sur :
 
 - le calibrage réaliste via `src/renderer/scripts/core/config.js`
-- une troisième loi, pour faire émerger la bonne abstraction du registre de lois
 - les `compatibilités` et `exclusivités` entre lois, encore inexistantes
+- deux axes de condition restent vierges : `privacy`, `comfort`
+- `authorityRelation` ne bouge jamais : la population ne se politise pas en réaction aux lois
+- la répartition des niveaux de revenu est figée : on ne sort jamais de la pauvreté
+- pas d'inflation, pas de croissance : les revenus ne bougent jamais
 
 ### Idéologies
 
